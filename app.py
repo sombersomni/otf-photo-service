@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 import aiohttp
 from io import BytesIO
 import boto3
@@ -5,7 +7,7 @@ import psd_tools
 from PIL import Image, ImageFont, ImageDraw
 from flask import Flask, jsonify, request
 from constants import Key_Title_Zip
-from helpers.photoshop import poll_request
+from helpers.photoshop import poll_ps_api, get_access_token
 
 from helpers.psd_layers import bulk_layer_composites, bulk_resize_images, flatten_layers
 from helpers.buckets import get_images_from_s3_keys
@@ -127,27 +129,28 @@ async def generate():
 
 @app.route('/poll')
 async def poll():
-    token = ''
-    api_key = ''
-    headers = {
-        "Content-Type": 'application/json',
-        "Authorization": f"Bearer {token}",
-        "x-api-key": api_key
-    }
-    payload = {
-        'manageFontsMissing': 'fail',
+    # token = ''
+    # api_key = ''
+    # headers = {
+    #     "Content-Type": 'application/json',
+    #     "Authorization": f"Bearer {token}",
+    #     "x-api-key": api_key
+    # }
+    # payload = {
+    #     'manageFontsMissing': 'fail',
         
-    }
-    async with aiohttp.ClientSession(headers=headers) as session:
-        response = await session.post(
-            '',
-            data=payload
-        )
-        if response.status == 200:
-            data = await response.json()
-            print(data)
-
-    await poll_request('https://dummyjson.com/products')
+    # }
+    # async with aiohttp.ClientSession(headers=headers) as session:
+    #     response = await session.post(
+    #         '',
+    #         data=payload
+    #     )
+    #     if response.status == 200:
+    #         data = await response.json()
+    #         print(data)
+    access_token = await get_access_token(app.instance_path)
+    print(access_token)
+    await poll_ps_api('https://dummyjson.com/products')
     return 'ok'
 
 if __name__ == '__main__':
