@@ -63,7 +63,6 @@ def generate():
 
     # Replace the layer's image data with the cropped replacement image
     layer_to_replace.topil().paste(resized_image, (0, 0))
-    psd_file.composite().save('output.png')
 
     text_layers = [layer for layer in layers if isinstance(layer, psd_tools.api.layers.Layer) and layer.kind == 'type']
     # Change text
@@ -75,7 +74,32 @@ def generate():
     # Save the modified PSD file to a buffer or file
     # output_buffer = BytesIO()
     # psd_file.save(output_buffer)
-    psd_file.save('output.psd')
+    # psd_file.save('output.psd')
+
+    # Find all visible layers
+    visible_layers = [layer for layer in get_layers(psd_file) if layer.is_visible()]
+
+    # Composite each visible layer into a separate PIL image
+    layer_images = []
+    print(psd_file.size)
+    for i, layer in enumerate(visible_layers):
+        print(layer.name, layer.kind)
+        if 'Vignette' in layer.name:
+            print(layer, layer.has_clip_layers(), layer.has_effects(), layer.has_mask(), layer.has_pixels())
+
+        else:
+            layer_image = Image.new(mode='RGBA', size=psd_file.size, color=(0, 0, 0, 0))
+            layer_data = layer.composite()
+            layer_image.paste(layer_data, box=layer.bbox[:2], mask=layer_data)
+            layer_images.append(layer_image)
+
+    # Combine all layer images into a single PIL image
+    merged_image = Image.new(mode='RGBA', size=psd_file.size, color=(0, 0, 0, 0))
+    for layer_image in layer_images[::]:
+        merged_image.alpha_composite(layer_image)
+
+    # Save the merged image as a PNG file
+    merged_image.save('output.png', format='PNG')
 
     # Save the merged image as a PNG file
     return jsonify([layer.name for layer in psd_file])
