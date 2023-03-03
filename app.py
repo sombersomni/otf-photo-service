@@ -5,7 +5,7 @@ from PIL import Image
 from flask import Flask, jsonify, request
 from constants import Key_Title_Zip
 
-from helpers.psd_layers import bulk_layer_composites, bulk_resize_images, get_layers
+from helpers.psd_layers import bulk_layer_composites, bulk_resize_images, flatten_layers
 from helpers.buckets import get_images_from_s3_keys
 
 app = Flask(__name__)
@@ -55,10 +55,10 @@ async def generate():
 
     psd_file = psd_tools.PSDImage.open(BytesIO(data))
     # Get the layer information from the PSD file
-    layers = get_layers(psd_file)
-
+    layers = list(flatten_layers(psd_file))
     layers_to_replace = [layer for layer in layers if layer.name in event_map and layer.is_visible()]
-    replacement_layer_map = {f"{layer.name}": layer for layer in layers_to_replace}
+    replacement_layer_map = {layer.name: layer for layer in layers_to_replace}
+    # Get all the bucket keys related to image layers
     bucket_key_title_zipped = (
         Key_Title_Zip(
             (
@@ -71,11 +71,15 @@ async def generate():
         (
             (event_map.get(layer.name).get('eventKey'), layer) for layer in layers_to_replace
             if event_map.get(layer.name, {}).get('value') is not None
+            and any(
+                image_format in event_map.get(layer.name, {}).get('value')[-4:]
+                for image_format in ['jpg', 'jpeg', 'png']
+            )
         )
     )
+    #
     replacement_images = await get_images_from_s3_keys(s3, bucket_name, bucket_key_title_zipped)
     resized_images = bulk_resize_images(replacement_images, replacement_layer_map)
-    # Resize the replacement image to fit within the bounds of the layer
 
     # text_layers = [layer for layer in layers if isinstance(layer, psd_tools.api.layers.Layer) and layer.kind == 'type']
     # # Change text
@@ -83,11 +87,6 @@ async def generate():
     #     if text_layer.name in ['Away Score', 'Home Score']:
     #         print(text_layer)
     #         print(text_layer.text)
-
-    # # Save the modified PSD file to a buffer or file
-    # # output_buffer = BytesIO()
-    # # psd_file.save(output_buffer)
-    psd_file.save('output.psd')
 
     layer_images = bulk_layer_composites(layers, resized_images, psd_file.size)
 
