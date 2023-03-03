@@ -5,7 +5,7 @@ import psd_tools
 
 from constants import Title_Image_Zip
 
-def flatten_layers(psd: psd_tools.psd):
+def flatten_layers(psd):
     """
     Flatten layers for psd file
     """
@@ -15,7 +15,10 @@ def flatten_layers(psd: psd_tools.psd):
         else:
             yield layer
 
-def bulk_resize_images(replacement_images: Iterable[Title_Image_Zip], replacement_layer_map: dict):
+def bulk_resize_images(
+    replacement_images: Iterable[Title_Image_Zip],
+    replacement_layer_map: dict[str, psd_tools.api.layers.Layer]
+):
     """
     Resize the replacement image to fit within the bounds of the layer
     """
@@ -38,7 +41,7 @@ def bulk_resize_images(replacement_images: Iterable[Title_Image_Zip], replacemen
         yield Title_Image_Zip(title, resized_image)
 
 def bulk_layer_composites(
-    layers: Iterable,
+    layers: Iterable[psd_tools.api.layers.Layer],
     replacement_images: Iterable[Title_Image_Zip],
     filesize: Tuple[Number, Number]
 ):

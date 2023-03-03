@@ -1,9 +1,11 @@
+import aiohttp
 from io import BytesIO
 import boto3
 import psd_tools
-from PIL import Image
+from PIL import Image, ImageFont, ImageDraw
 from flask import Flask, jsonify, request
 from constants import Key_Title_Zip
+from helpers.photoshop import poll_request
 
 from helpers.psd_layers import bulk_layer_composites, bulk_resize_images, flatten_layers
 from helpers.buckets import get_images_from_s3_keys
@@ -78,8 +80,9 @@ async def generate():
         )
     )
     #
-    replacement_images = await get_images_from_s3_keys(s3, bucket_name, bucket_key_title_zipped)
-    resized_images = bulk_resize_images(replacement_images, replacement_layer_map)
+    # replacement_images = await get_images_from_s3_keys(s3, bucket_name, bucket_key_title_zipped)
+    # resized_images = bulk_resize_images(replacement_images, replacement_layer_map)
+
 
     # text_layers = [layer for layer in layers if isinstance(layer, psd_tools.api.layers.Layer) and layer.kind == 'type']
     # # Change text
@@ -87,19 +90,65 @@ async def generate():
     #     if text_layer.name in ['Away Score', 'Home Score']:
     #         print(text_layer)
     #         print(text_layer.text)
+    fontfile = s3.get_object(Bucket=bucket_name, Key='periodgamescores/Druk-Heavy.ttf')['Body'].read()
+    text_layer = [layer for layer in layers if layer.name == 'Away Score'][-1]
+    text_layer.topil().show()
+    print(text_layer.resource_dict)
+    print(text_layer.engine_dict)
+    print(psd_file.size[0] / text_layer.width)
+    # Extract the font information from the text layer
+    font_family = text_layer.resource_dict.get('FontSet', [{}])[0].get('Name', 'Helvetica')
+    fill_color = text_layer.resource_dict.get('FontSet', [{}])[0].get('FillColor', (255, 255, 255, 255))
+    font_size = text_layer.width
+    font = ImageFont.truetype(BytesIO(fontfile), font_size)
 
-    layer_images = bulk_layer_composites(layers, resized_images, psd_file.size)
+    # Create a blank image with an alpha channel
+    text_image = Image.new('RGBA', (text_layer.width, text_layer.height), (0, 0, 0, 0))
+    print(text_layer.left, text_layer.right)
+    # Draw the text onto the image
+    draw = ImageDraw.Draw(text_image)
+    draw.text((0, 0), '127', font=font, fill=fill_color, spacing=-1, align='center', direction=None)
+    text_image = text_image.transform(text_layer.size, Image.AFFINE, (1, 0, 0, 0.25, 1, 0))
 
-    # # Combine all layer images into a single PIL image
-    merged_image = Image.new(mode='RGBA', size=psd_file.size, color=(0, 0, 0, 0))
-    for layer_image in layer_images:
-        merged_image.alpha_composite(layer_image)
+    # Save the text image as a PNG file with an alpha channel
+    text_image.show()
+    # layer_images = bulk_layer_composites(layers, resized_images, psd_file.size)
 
-    # # Save the merged image as a PNG file
-    merged_image.save('output.png', format='PNG')
+    # # # Combine all layer images into a single PIL image
+    # merged_image = Image.new(mode='RGBA', size=psd_file.size, color=(0, 0, 0, 0))
+    # for layer_image in layer_images:
+    #     merged_image.alpha_composite(layer_image)
+
+    # # # Save the merged image as a PNG file
+    # merged_image.save('output.png', format='PNG')
 
     # Save the merged image as a PNG file
     return jsonify([layer.name for layer in psd_file])
+
+@app.route('/poll')
+async def poll():
+    token = ''
+    api_key = ''
+    headers = {
+        "Content-Type": 'application/json',
+        "Authorization": f"Bearer {token}",
+        "x-api-key": api_key
+    }
+    payload = {
+        'manageFontsMissing': 'fail',
+        
+    }
+    async with aiohttp.ClientSession(headers=headers) as session:
+        response = await session.post(
+            '',
+            data=payload
+        )
+        if response.status == 200:
+            data = await response.json()
+            print(data)
+
+    await poll_request('https://dummyjson.com/products')
+    return 'ok'
 
 if __name__ == '__main__':
   app.run(debug=True)
