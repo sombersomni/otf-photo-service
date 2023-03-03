@@ -150,7 +150,7 @@ async def poll():
     #         print(data)
     access_token = await get_access_token(app.instance_path)
     print(access_token)
-    await poll_ps_api('https://dummyjson.com/products')
+    await poll_ps_api('https://dummyjson.com/products', access_token)
     return 'ok'
 
 if __name__ == '__main__':

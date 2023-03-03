@@ -8,7 +8,7 @@ import os
 API_KEY = os.environ.get('PHOTOSHOP_CLIENT_ID')
 CLIENT_SECRET = os.environ.get('PHOTOSHOP_CLIENT_SECRET')
 ORG_ID = os.environ.get('PHOTOSHOP_ORG_ID')
-TECH_ID = os.environ.get('PHOTOSHOP_TECHNICAL_ID')
+TECH_ID = os.environ.get('PHOTOSHOP_TECHNICAL_ACCOUNT_ID')
 
 async def poll_ps_api(
   url:str,
@@ -31,7 +31,6 @@ async def poll_ps_api(
         if response.status == 200:
             # Success! Do something with the response here.
             data = await response.json()
-            print(data)
             return response
         elif diff_time > timeout:
             # Timeout reached.
@@ -51,22 +50,20 @@ async def get_access_token(instance_path: str):
       "exp": round(24*60*60+ int(time.time())),###Expiration set to 24 hours
       "iss": ORG_ID,
       "sub": TECH_ID,
-      f"{ims}/s/ent_user_sdk": True,
+      f"{ims}/s/ent_ccas_sdk": True,
       "aud": f"{ims}/c/{API_KEY}"
   }
   encoded_jwt = jwt.encode(jwt_payload, private_key_unencrypted , algorithm='RS256')
-  print(encoded_jwt)
   payload = {
     "client_id": API_KEY,
     "client_secret": CLIENT_SECRET,
     "jwt_token" : encoded_jwt
   }
-  print(payload)
+
   async with aiohttp.ClientSession(headers=header_jwt) as session:
     response = await session.post(f"{ims}/ims/exchange/jwt/", data=payload)
-    json_response = await response.json()
-    print(json_response)
-    token = json_response['access_token']
-    expire = json_response['expires_in']
-    print(expire)
-    return token
+    data = await response.json()
+    access_token = data['access_token']
+    expire = data['expires_in']
+    print(f"Expires: {expire}")
+    return access_token
