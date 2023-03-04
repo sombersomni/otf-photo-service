@@ -1,7 +1,9 @@
 import torch
 import torchvision.transforms as T
-from torchvision.models.detection import fasterrcnn_resnet50_fpn
-import cv2
+from torchvision.models.detection import (
+    fasterrcnn_resnet50_fpn,
+    FasterRCNN_ResNet50_FPN_Weights
+)
 import os
 from typing import Tuple
 from PIL import Image, ImageDraw
@@ -12,7 +14,7 @@ def smart_crop(user_box: Tuple[int,int,int,int]):
     output_bbox = os.path.join('data', 'bbox.jpg')
 
     # Load the pre-trained Faster R-CNN model
-    model = fasterrcnn_resnet50_fpn(weights=True)
+    model = fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.DEFAULT)
     model.eval()
 
     # Load the input image
