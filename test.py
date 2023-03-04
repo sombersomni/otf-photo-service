@@ -5,7 +5,7 @@ import cv2
 import os
 
 def smart_crop():
-    filename = os.path.join('data', 'player.jpg')
+    filename = os.path.join('data', 'nba_small.jpg')
     output_file = os.path.join('data', 'cropped.jpg')
      # Load the pre-trained Faster R-CNN model
     model = fasterrcnn_resnet50_fpn(pretrained=True)
@@ -29,7 +29,8 @@ def smart_crop():
     # Extract the bounding boxes and class labels from the output
     boxes = output[0]['boxes'].numpy()
     scores = output[0]['scores'].numpy()
-
+    print(boxes)
+    print(scores)
     # Select the bounding box corresponding to the main object in the image
     main_box = None
     max_score = 0
@@ -37,7 +38,7 @@ def smart_crop():
         if scores[i] > max_score:
             max_score = scores[i]
             main_box = boxes[i]
-
+    print(main_box)
     # Add padding to the selected bounding box
     padding = 0.1
     xmin, ymin, xmax, ymax = main_box
