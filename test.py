@@ -6,6 +6,7 @@ import os
 
 def smart_crop():
     filename = os.path.join('data', 'player.jpg')
+    output_file = os.path.join('data', 'cropped.jpg')
      # Load the pre-trained Faster R-CNN model
     model = fasterrcnn_resnet50_fpn(pretrained=True)
     model.eval()
@@ -55,6 +56,6 @@ def smart_crop():
     cropped_image = image[ymin:ymax, xmin:xmax]
 
     # Save the cropped image
-    cv2.imwrite('data/cropped_image.png', cropped_image)
+    cv2.imwrite(output_file, cropped_image)
 
 smart_crop()
