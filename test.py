@@ -12,7 +12,7 @@ def smart_crop(user_box: Tuple[int,int,int,int]):
     output_bbox = os.path.join('data', 'bbox.jpg')
 
     # Load the pre-trained Faster R-CNN model
-    model = fasterrcnn_resnet50_fpn(pretrained=True)
+    model = fasterrcnn_resnet50_fpn(weights=True)
     model.eval()
 
     # Load the input image
