@@ -6,7 +6,7 @@ import os
 from typing import Tuple
 from PIL import Image, ImageDraw
 
-def smart_crop(user_box: Tuple(int,int,int,int)):
+def smart_crop(user_box: Tuple[int,int,int,int]):
     filename = os.path.join('data', 'nba_small.jpg')
     output_file = os.path.join('data', 'cropped.jpg')
     output_bbox = os.path.join('data', 'bbox.jpg')
