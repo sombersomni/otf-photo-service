@@ -14,7 +14,7 @@ def smart_crop(user_box: Tuple[int,int,int,int]):
     output_bbox = os.path.join('data', 'bbox.jpg')
 
     # Load the pre-trained Faster R-CNN model
-    model = fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.DEFAULT)
+    model = fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights)
     model.eval()
 
     # Load the input image
@@ -63,25 +63,31 @@ def smart_crop(user_box: Tuple[int,int,int,int]):
     ymax = min(int(ymax), image.height)
     cropped_image = image.crop((xmin, ymin, xmax, ymax))
 
-    # Resize the cropped image to fit within the user-specified bounding box
-    user_width = user_box[2]
-    user_height = user_box[3]
-    aspect_ratio = user_width / user_height
-    cropped_width = cropped_image.width
-    cropped_height = cropped_image.height
+    # Get the user-specified bounding box
+    user_box = (0, 0, 400, 300)
+
+    # Calculate the size of the bounding box that fits within the cropped image
+    cropped_width, cropped_height = cropped_image.size
+    box_aspect_ratio = user_box[2] / user_box[3]
     cropped_aspect_ratio = cropped_width / cropped_height
-    if cropped_aspect_ratio > aspect_ratio:
-        new_height = int(user_width / cropped_aspect_ratio)
-        resized_image = cropped_image.resize((user_width, new_height))
-        padding = (user_height - new_height) // 2
-        resized_image = Image.new('RGB', (user_width, user_height), (255, 255, 255))
-        resized_image.paste(cropped_image, (0, padding))
+    if cropped_aspect_ratio > box_aspect_ratio:
+        box_width = int(user_box[3] * cropped_aspect_ratio)
+        box_height = user_box[3]
     else:
-        new_width = int(user_height * cropped_aspect_ratio)
-        resized_image = cropped_image.resize((new_width, user_height))
-        padding = (user_width - new_width) // 2
-        resized_image = Image.new('RGB', (user_width, user_height), (255, 255, 255))
-        resized_image.paste(cropped_image, (padding, 0))
+        box_width = user_box[2]
+        box_height = int(user_box[2] / cropped_aspect_ratio)
+
+    # Calculate the coordinates of the bounding box within the cropped image
+    box_left = (cropped_width - box_width) // 2
+    box_top = (cropped_height - box_height) // 2
+    box_right = box_left + box_width
+    box_bottom = box_top + box_height
+
+    # Crop the image again using the new bounding box
+    centered_image = cropped_image.crop((box_left, box_top, box_right, box_bottom))
+
+    # Resize the centered image to fit within the user-specified bounding box
+    resized_image = centered_image.resize(user_box)
 
     # Save the resized image
     resized_image.save(output_file)
@@ -92,11 +98,20 @@ def smart_crop(user_box: Tuple[int,int,int,int]):
         xmin, ymin, xmax, ymax = box
         draw.rectangle([(xmin, ymin), (xmax, ymax)], outline=(0, 255, 0))
 
-    # Draw the user-specified bounding box over the original image
-    xmin, ymin, xmax, ymax = user_box
+    # Draw the bounding box corresponding to the main object in the image
+    xmin, ymin, xmax, ymax = main_box
     draw.rectangle([(xmin, ymin), (xmax, ymax)], outline=(255, 0, 0))
 
-    # Save the image with bounding boxes drawn
+    # Draw the bounding box that fits within the cropped image
+    box_left += xmin
+    box_top += ymin
+    box_right += xmin
+    box_bottom += ymin
+    draw.rectangle([(box_left, box_top), (box_right, box_bottom)], outline=(0, 0, 255))
+
+    # Draw the bounding box that was resized to fit within the user-specified bounding box
+    xmin, ymin, xmax, ymax = (0, 0, resized_image.width, resized_image.height)
+    draw.rectangle([(xmin, ymin), (xmax, ymax)], outline=(255, 255, 0))
     image.save(output_bbox)
     image.close()
 
