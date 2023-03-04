@@ -11,6 +11,7 @@ from helpers.photoshop import get_access_token, psd_edit
 
 from helpers.psd_layers import bulk_layer_composites, bulk_resize_images, flatten_layers
 from helpers.buckets import create_presigned_post, get_images_from_s3_keys, create_presigned_url
+from tools.imaging import smart_crop
 
 app = Flask(__name__)
 
@@ -81,54 +82,54 @@ async def generate():
             )
         )
     )
-    # do initial edit using photohsop and save psd
-    text_layer = [layer for layer in layers if layer.name == 'Away Score'][-1]
-    access_token = await get_access_token(session)
-    signed_urls = await asyncio.gather(
-        *([
-            create_presigned_url(s3, bucket_name, key, title, method='GET', command='get_object')
-            for title, key in [
+    # # do initial edit using photohsop and save psd
+    # text_layer = [layer for layer in layers if layer.name == 'Away Score'][-1]
+    # access_token = await get_access_token(session)
+    # signed_urls = await asyncio.gather(
+    #     *([
+    #         create_presigned_url(s3, bucket_name, key, title, method='GET', command='get_object')
+    #         for title, key in [
 
-                ("fonts", "periodgamescores/Druk-Heavy.ttf"),
-                ("inputs", "periodgamescores/nba-quarter-1080x1920.psd"),
-            ]
-        ]
-          + [
-            create_presigned_url(s3, bucket_name, key, title, method='PUT', command='put_object')
-            for title, key in [
-                ("outputs", f"final.psd"),
-            ]
-        ]),
-      return_exceptions=True
-    )
-    print('--------------')
-    print(text_layer.resource_dict)
-    payload = {
-        "inputs": [{
-            "href": [signed_url for title, signed_url in signed_urls if title == "inputs"][-1],
-            "storage": "external"
-        }],
-        "options": {
-            "layers": [
-                {
-                    "name": text_layer.name,
-                    "text": {
-                        "content": "44"
-                    }
-                }
-            ]
-        },
-        "outputs": [
-            {
-                "href": signed_url,
-                "storage": "external",
-                "type": "vnd.adobe.photoshop",
-            }
-            for title, signed_url in signed_urls if title == "outputs"
-        ]
-    }
-    print(payload)
-    await psd_edit(session, access_token, payload)
+    #             ("fonts", "periodgamescores/Druk-Heavy.ttf"),
+    #             ("inputs", "periodgamescores/nba-quarter-1080x1920.psd"),
+    #         ]
+    #     ]
+    #       + [
+    #         create_presigned_url(s3, bucket_name, key, title, method='PUT', command='put_object')
+    #         for title, key in [
+    #             ("outputs", f"final.psd"),
+    #         ]
+    #     ]),
+    #   return_exceptions=True
+    # )
+    # print('--------------')
+    # print(text_layer.resource_dict)
+    # payload = {
+    #     "inputs": [{
+    #         "href": [signed_url for title, signed_url in signed_urls if title == "inputs"][-1],
+    #         "storage": "external"
+    #     }],
+    #     "options": {
+    #         "layers": [
+    #             {
+    #                 "name": text_layer.name,
+    #                 "text": {
+    #                     "content": "44"
+    #                 }
+    #             }
+    #         ]
+    #     },
+    #     "outputs": [
+    #         {
+    #             "href": signed_url,
+    #             "storage": "external",
+    #             "type": "vnd.adobe.photoshop",
+    #         }
+    #         for title, signed_url in signed_urls if title == "outputs"
+    #     ]
+    # }
+    # print(payload)
+    # await psd_edit(session, access_token, payload)
     #
     # replacement_images = await get_images_from_s3_keys(s3, bucket_name, bucket_key_title_zipped)
     # resized_images = bulk_resize_images(replacement_images, replacement_layer_map)
@@ -173,7 +174,10 @@ async def generate():
     # Save the merged image as a PNG file
     return jsonify([layer.name for layer in psd_file])
 
-
+@app.route('/crop', methods=['POST'])
+def crop():
+    smart_crop()
+    return 'ok'
 
 if __name__ == '__main__':
   app.run(debug=True, load_dotenv=True)
