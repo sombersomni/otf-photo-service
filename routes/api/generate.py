@@ -5,13 +5,12 @@ from io import BytesIO
 import boto3
 import psd_tools
 from PIL import Image, ImageFont, ImageDraw
-from flask import Flask, jsonify, request, g
+from flask import g, jsonify, request
 from constants import Key_Title_Zip
 from helpers.photoshop import get_access_token, psd_edit
 
 from helpers.psd_layers import bulk_layer_composites, bulk_resize_images, flatten_layers
 from helpers.buckets import create_presigned_post, get_images_from_s3_keys, create_presigned_url
-from blueprint import api_bp
 
 # Parameters for downloading the PSD file
 bucket_name = 'otfnbagraphics'
@@ -33,10 +32,7 @@ event_map = {
     }
 }
 
-@api_bp.route('/generate', methods=['POST'])
-async def generate():
-    s3 = g.s3_client
-    session = aiohttp.ClientSession()
+async def generate_controller(s3, http_session):
     body: dict = request.get_json()
     if not all(key in ['awayTeam', 'homeTeam'] for key in body.keys()):
         return jsonify({ "err": "Invalid event keys"})
@@ -71,7 +67,7 @@ async def generate():
     )
     # # do initial edit using photohsop and save psd
     # text_layer = [layer for layer in layers if layer.name == 'Away Score'][-1]
-    # access_token = await get_access_token(session)
+    # access_token = await get_access_token(http_session)
     # signed_urls = await asyncio.gather(
     #     *([
     #         create_presigned_url(s3, bucket_name, key, title, method='GET', command='get_object')
@@ -116,7 +112,7 @@ async def generate():
     #     ]
     # }
     # print(payload)
-    # await psd_edit(session, access_token, payload)
+    # await psd_edit(http_session, access_token, payload)
     #
     # replacement_images = await get_images_from_s3_keys(s3, bucket_name, bucket_key_title_zipped)
     # resized_images = bulk_resize_images(replacement_images, replacement_layer_map)
