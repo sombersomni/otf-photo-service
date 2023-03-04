@@ -88,10 +88,10 @@ def smart_crop(user_box: Tuple[int,int,int,int]):
     print((box_left, box_top, box_right, box_bottom))
     print(user_box)
     # Resize the centered image to fit within the user-specified bounding box
-    resized_image = centered_image.resize(user_box[2:])
+    # resized_image = centered_image.resize(user_box[2:])
 
     # Save the resized image
-    resized_image.save(output_file)
+    centered_image.save(output_file)
 
     # Draw bounding boxes over the original image
     draw = ImageDraw.Draw(image)
@@ -111,7 +111,7 @@ def smart_crop(user_box: Tuple[int,int,int,int]):
     draw.rectangle([(box_left, box_top), (box_right, box_bottom)], outline=(0, 0, 255))
 
     # Draw the bounding box that was resized to fit within the user-specified bounding box
-    xmin, ymin, xmax, ymax = (0, 0, resized_image.width, resized_image.height)
+    xmin, ymin, xmax, ymax = (0, 0, centered_image.width, centered_image.height)
     draw.rectangle([(xmin, ymin), (xmax, ymax)], outline=(255, 255, 0))
     image.save(output_bbox)
     image.close()
