@@ -1,6 +1,6 @@
 from flask import Flask
 
-from routes.api.api import api_bp
+from routes.api.blueprint import api_bp
 
 from middleware.session import session_middleware
 

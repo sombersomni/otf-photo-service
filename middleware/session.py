@@ -13,8 +13,5 @@ def session_middleware(app):
           aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'),
         )
         # Setup Client session to share across requests
-        g.http_session = aiohttp.ClientSession(
-          timeout=60
-        )
     app.before_request(before_request)
   

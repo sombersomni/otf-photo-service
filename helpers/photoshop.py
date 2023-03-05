@@ -55,26 +55,25 @@ async def psd_edit(session: aiohttp.ClientSession, access_token: str, payload: d
       :return: access_token as a string.
     """
     headers = {
-        "Content-Type": 'application/json',
         "Authorization": f"Bearer {access_token}",
         "x-api-key": API_KEY
     }
-
-    response = await session.post(
-        'https://image.adobe.io/pie/psdService/text',
-        json=payload,
+    print(headers)
+    response = await session.get(
+        'https://image.adobe.io/pie/psdService/hello',
         headers=headers
     )
-    data = await response.json()
-    print(data, response.status)
-    if response.status >= 400:
-      print('Error occurred for photoshop api')
-      abort(data.get('code', 400), data.get('title', "Unknown photoshop api error"))
+    print(response)
+    # data = await response.json()
+    # print(data, response.status)
+    # if response.status >= 400:
+    #   print('Error occurred for photoshop api')
+    #   abort(data.get('code', 400), data.get('title', "Unknown photoshop api error"))
 
-    url = data.get('_links', {}).get('self', {}).get('href')
-    if not url:
-      abort(400, "Photoshop polling url is invalid")
-    result = poll_api(access_token, url, timeout=120)
+    # url = data.get('_links', {}).get('self', {}).get('href')
+    # if not url:
+    #   abort(400, "Photoshop polling url is invalid")
+    # result = poll_api(access_token, url, timeout=120)
     return
 
 async def get_access_token(session: aiohttp.ClientSession) -> str:
@@ -103,7 +102,7 @@ async def get_access_token(session: aiohttp.ClientSession) -> str:
     "jwt_token" : encoded_jwt
   }
 
-  response = await session.post(f"{ims}/ims/exchange/jwt/", data=payload)
+  response = await session.post(f"{ims}/ims/exchange/jwt/", data=payload, headers=header_jwt)
   data = await response.json()
   access_token = data['access_token']
   expire = data['expires_in']
