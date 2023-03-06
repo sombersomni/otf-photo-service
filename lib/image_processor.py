@@ -143,7 +143,7 @@ class ImageProcessor:
         print(sizes)
         max_letters_per_line = int(original_img.size[0] / max(sizes, key=lambda x: x[0])[0])
         print('max letters per line', max_letters_per_line)
-        num_lines = len(text) / max_letters_per_line
+        num_lines = int(len(text) / max_letters_per_line)
         print('predicted num of lines', num_lines)
         new_img_height = int(original_img.size[1] * num_lines)
         print('new img height', new_img_height)
