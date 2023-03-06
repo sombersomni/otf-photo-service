@@ -6,7 +6,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 class ImageProcessor:
     @staticmethod
-    def smart_crop(image: Image):
+    def smart_crop(image):
         import torch
         import torchvision.transforms as T
         from torchvision.models.detection import (
@@ -64,7 +64,7 @@ class ImageProcessor:
         return cropped_image
 
     @staticmethod
-    def resize_image(replacement_img: Image, original_size: Tuple[int, int], keep_aspect_ratio=False) -> Image:
+    def resize_image(replacement_img, original_size, keep_aspect_ratio=False):
         print('Image Processor resize is starting...')
         # Get the sizes and aspect ratios of the original and replacement images
         orig_width, orig_height = original_size

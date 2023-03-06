@@ -17,8 +17,8 @@ def flatten_layers(psd):
             yield layer
 
 def bulk_resize_images(
-    replacement_images: Iterable[Title_Image_Zip],
-    replacement_layer_map: dict[str, psd_tools.api.layers.Layer]
+    replacement_images,
+    replacement_layer_map
 ):
     """
     Resize the replacement image to fit within the bounds of the layer
@@ -36,9 +36,9 @@ def bulk_resize_images(
         yield Title_Image_Zip(title, resized_image)
 
 def bulk_layer_composites(
-    layers: Iterable[psd_tools.api.layers.Layer],
-    replacement_images: Iterable[Title_Image_Zip],
-    filesize: Tuple[Number, Number]
+    layers,
+    replacement_images,
+    filesize
 ):
     visible_layers = (layer for layer in layers if layer.is_visible())
     replace_image_map = {title: image for title, image in replacement_images}
