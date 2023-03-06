@@ -6,9 +6,9 @@ import boto3
 import psd_tools
 from PIL import Image, ImageFont, ImageDraw
 from flask import g, jsonify, request
-from constants import Key_Title_Zip
+from constants import Key_Title_Zip, Title_Image_Zip
 from helpers.photoshop import get_access_token, psd_edit
-
+from itertools import chain
 from helpers.psd_layers import bulk_layer_composites, bulk_resize_images, flatten_layers
 from helpers.buckets import create_presigned_post, get_images_from_s3_keys, create_presigned_url
 
@@ -27,16 +27,22 @@ event_map = {
         "eventKey": "homeTeam"
     },
     "Getty Image": {
-        "value":  "periodgamescores/GettyImages-1465156344.jpg",
+        "value":  "periodgamescores/nba.jpg",
         "eventKey": None
+    },
+    "Period Title": {
+        "value":  "END 3",
+        "eventKey": "period"
     }
 }
 
 async def generate_controller(s3, http_session):
     try:
         body: dict = request.get_json()
-        if not all(key in ['awayTeam', 'homeTeam'] for key in body.keys()):
-            return jsonify({ "err": "Invalid event keys"})
+        if (
+            not all(key in ['awayTeam', 'homeTeam', 'awayScore', 'homeScore'] for key in body.keys())
+        ):
+            return jsonify(error="Request body is invalid"), 400
 
         # Download the PSD file from S3
         data = s3.get_object(Bucket=bucket_name, Key=key)['Body'].read()
@@ -116,8 +122,8 @@ async def generate_controller(s3, http_session):
         # print(payload)
         # await psd_edit(http_session, access_token, payload)
         #
-        # replacement_images = await get_images_from_s3_keys(s3, bucket_name, bucket_key_title_zipped)
-        # resized_images = bulk_resize_images(replacement_images, replacement_layer_map)
+        replacement_images = await get_images_from_s3_keys(s3, bucket_name, bucket_key_title_zipped)
+        resized_images = bulk_resize_images(replacement_images, replacement_layer_map)
 
 
         text_layers = [layer for layer in layers if isinstance(layer, psd_tools.api.layers.Layer) and layer.kind == 'type']
@@ -126,23 +132,24 @@ async def generate_controller(s3, http_session):
             if text_layer.name in ['Away Score', 'Home Score']:
                 print(text_layer)
                 print(text_layer.text)
-        fontfile = s3.get_object(Bucket=bucket_name, Key='periodgamescores/Druk-Heavy.ttf')['Body'].read()
-        text_layer = [layer for layer in layers if layer.name == 'Away Score'][-1]
-        text_layer.topil().show()
+        fontfile = s3.get_object(Bucket=bucket_name, Key='periodgamescores/Druk-Medium-Trial.otf')['Body'].read()
+        text_layer = [layer for layer in layers if layer.name == 'Period Title'][-1]
         print(text_layer.resource_dict)
         print('--------------------')
         print(text_layer.engine_dict)
         print(psd_file.size[0] / text_layer.width)
         # Extract the font information from the text layer
         fill_color = text_layer.resource_dict.get('FontSet', [{}])[0].get('FillColor', (255, 255, 255, 255))
-        font = ImageFont.truetype(BytesIO(fontfile), 12)
-        new_text = '127'
+        font = ImageFont.truetype(BytesIO(fontfile), 80)
+        new_text = 'END 3'
         text_width, text_height = font.getsize(new_text)
         # Create a blank image with an alpha channel
         print(text_width, text_height)
         text_area = text_width * text_height
         layer_area = text_layer.width * text_layer.height
         text_image = Image.new('RGBA', (text_width, text_height), (0, 0, 0, 0))
+        text_layer.topil().show()
+
 
         print(text_area, layer_area, layer_area / text_area)
         # Draw the text onto the image
@@ -150,17 +157,17 @@ async def generate_controller(s3, http_session):
         draw.text((0, 0), new_text, font=font, fill=fill_color, align='center', direction=None)
         # text_image = text_image.transform(text_layer.size, Image.AFFINE, (1, 0, 0, 0.25, 1, 0))
         text_image.show()
-        # # # Combine all layer images into a single PIL image  
-        # layer_images = bulk_layer_composites(layers, resized_images, psd_file.size)
+        # Combine all layer images into a single PIL image
+        text_images = (Title_Image_Zip('Period Title', t) for t in [text_image])
+        images_to_process = chain(resized_images, text_images)  
+        layer_images = bulk_layer_composites(layers, images_to_process, psd_file.size)
 
-        # merged_image = Image.new(mode='RGBA', size=psd_file.size, color=(0, 0, 0, 0))
-        # for layer_image in layer_images:
-        #     merged_image.alpha_composite(layer_image)
-
-        # # # Save the merged image as a PNG file
-        # merged_image.save('output.png', format='PNG')
+        merged_image = Image.new(mode='RGBA', size=psd_file.size, color=(0, 0, 0, 0))
+        for layer_image in layer_images:
+            merged_image.alpha_composite(layer_image)
 
         # Save the merged image as a PNG file
+        merged_image.save('output.png', format='PNG')
     except Exception as e:
         print(e)
         await http_session.close()

@@ -8,17 +8,13 @@ import os
 from typing import Tuple
 from PIL import Image, ImageDraw
 
-def smart_crop(user_box: Tuple[int,int,int,int]):
-    filename = os.path.join('data', 'nba_small.jpg')
-    output_file = os.path.join('data', 'cropped.jpg')
-    output_bbox = os.path.join('data', 'bbox.jpg')
+def smart_crop(image: Image, user_box: Tuple[int,int,int,int]):
+    output_file = os.path.join('data', 'cropped_img.jpg')
+    output_bbox = os.path.join('data', 'bbox_img.jpg')
 
     # Load the pre-trained Faster R-CNN model
     model = fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.DEFAULT)
     model.eval()
-
-    # Load the input image
-    image = Image.open(filename)
 
     # Convert the image to RGB if necessary
     if image.mode != 'RGB':
@@ -115,5 +111,46 @@ def smart_crop(user_box: Tuple[int,int,int,int]):
     draw.rectangle([(xmin, ymin), (xmax, ymax)], outline=(255, 255, 0))
     image.save(output_bbox)
     image.close()
+    return centered_image
 
-smart_crop((0, 0, 400, 300))
+def replace_image(original_img: Image, replacement_img: Image) -> Image:
+    # Get the sizes and aspect ratios of the original and replacement images
+    orig_width, orig_height = original_img.size
+    orig_aspect_ratio = orig_width / orig_height
+
+    repl_width, repl_height = replacement_img.size
+    repl_aspect_ratio = repl_width / repl_height
+
+    # Check if the two images have the same width and height
+    if orig_width == repl_width and orig_height == repl_height:
+        return replacement_img
+
+    # Check if the aspect ratios of the two images are the same
+    if orig_aspect_ratio == repl_aspect_ratio:
+        # Make the replacement image large enough to match the width and height of the original image
+        return replacement_img.resize((orig_width, orig_height), resample=Image.LANCZOS)
+
+    # If the aspect ratios are different, then we paste the replacement image in the center of the original image
+    # bounding box and resize the replacement image until the two areas are near equal
+    orig_area = orig_width * orig_height
+    repl_area = repl_width * repl_height
+
+    if repl_area < orig_area:
+        # Scale up the replacement image until its area is close to the original image's area
+        scale_factor = (orig_area / repl_area) ** 0.5
+        new_size = (int(repl_width * scale_factor), int(repl_height * scale_factor))
+        replacement_img = replacement_img.resize(new_size, resample=Image.LANCZOS)
+    elif repl_area > orig_area:
+        # Scale down the replacement image until its area is close to the original image's area
+        scale_factor = (orig_area / repl_area) ** 0.5
+        new_size = (int(repl_width * scale_factor), int(repl_height * scale_factor))
+        replacement_img = replacement_img.resize(new_size, resample=Image.LANCZOS)
+
+    # Calculate the coordinates to paste the replacement image at the center of the original image
+    paste_coords = ((orig_width - replacement_img.width) // 2, (orig_height - replacement_img.height) // 2)
+
+    # Create a new image and paste the replacement image onto it at the calculated coordinates
+    new_img = Image.new(mode='RGB', size=(orig_width, orig_height), color=(255, 255, 255))
+    new_img.paste(replacement_img, paste_coords)
+
+    return new_img

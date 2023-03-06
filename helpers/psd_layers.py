@@ -58,3 +58,4 @@ def bulk_layer_composites(
             mask=None if replacement_image else layer_data
         )
         yield layer_image
+
