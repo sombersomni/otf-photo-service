@@ -27,7 +27,7 @@ event_map = {
         "eventKey": "homeTeam"
     },
     "Getty Image": {
-        "value":  "periodgamescores/nba.jpg",
+        "value":  "periodgamescores/cropped_img.jpg",
         "eventKey": None
     },
     "Period Title": {
@@ -148,7 +148,6 @@ async def generate_controller(s3, http_session):
         text_area = text_width * text_height
         layer_area = text_layer.width * text_layer.height
         text_image = Image.new('RGBA', (text_width, text_height), (0, 0, 0, 0))
-        text_layer.topil().show()
 
 
         print(text_area, layer_area, layer_area / text_area)
@@ -156,7 +155,6 @@ async def generate_controller(s3, http_session):
         draw = ImageDraw.Draw(text_image)
         draw.text((0, 0), new_text, font=font, fill=fill_color, align='center', direction=None)
         # text_image = text_image.transform(text_layer.size, Image.AFFINE, (1, 0, 0, 0.25, 1, 0))
-        text_image.show()
         # Combine all layer images into a single PIL image
         text_images = (Title_Image_Zip('Period Title', t) for t in [text_image])
         images_to_process = chain(resized_images, text_images)  

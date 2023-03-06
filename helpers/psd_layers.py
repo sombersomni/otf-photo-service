@@ -4,6 +4,7 @@ from PIL import Image
 import psd_tools
 
 from constants import Title_Image_Zip
+from lib.image_processor import ImageProcessor
 
 def flatten_layers(psd):
     """
@@ -25,18 +26,11 @@ def bulk_resize_images(
 
     for title, replacement_image in replacement_images:
         layer_to_replace = replacement_layer_map[title]
-        width_ratio = replacement_image.width / layer_to_replace.width
-        height_ratio = replacement_image.height / layer_to_replace.height
-        if width_ratio > height_ratio:
-            new_width = layer_to_replace.width
-            new_height = int(replacement_image.height * (new_width / replacement_image.width))
-        else:
-            new_height = layer_to_replace.height
-            new_width = int(replacement_image.width * (new_height / replacement_image.height))
-        resized_image = replacement_image.resize((
-            layer_to_replace.width if 'Getty' in title else new_width,
-            layer_to_replace.height if 'Getty' in title else new_height
-        ))
+        resized_image = ImageProcessor.resize_image(
+            (layer_to_replace.width, layer_to_replace.height),
+            replacement_image,
+            keep_aspect_ratio=('Logo' in title)
+        )
         print(title, resized_image.width, resized_image.height)
         yield Title_Image_Zip(title, resized_image)
 
