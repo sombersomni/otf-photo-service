@@ -163,9 +163,9 @@ class ImageProcessor:
             print('x, y', x, y)
             word_width, _ = draw.textsize(word, font=font)
             print('new word width', word_width)
-            if x + word_width >= original_img.size[0]:
-                x = 0
-                y += winning_letter_width
+            # if x + word_width >= original_img.size[0]:
+            #     x = 0
+            #     y += winning_letter_width
                 
             draw.text((x, y), word, font=font, fill=(255,255,255))
             
