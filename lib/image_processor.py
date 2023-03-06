@@ -174,7 +174,7 @@ class ImageProcessor:
             new_img = Image.new('RGB', (x, new_img_height + padding[1]), color=(0,0,0,0))
             draw = ImageDraw.Draw(new_img)
         
-        draw.text((x, y), word, font=font, fill=(255,255,255))    
+        draw.text((x, y), text, font=font, fill=(255,255,255))    
 
         # Save the new image
         return new_img
