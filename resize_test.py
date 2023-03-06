@@ -1,9 +1,8 @@
 from PIL import Image
-from lib.imaging import smart_crop, replace_image
+from lib.imaging import replace_image
 
-original_img = Image.open('data/dribble.jpg')
-new_img = Image.open('data/jook.jpg')
-cropped_img = smart_crop(new_img, original_img.getbbox())
-img = replace_image(original_img, cropped_img)
+original_img = Image.open('data/atlanta-hawks.png')
+new_img = Image.open('data/houston-rockets.png')
+img = replace_image(original_img, new_img, keep_aspect_ratio=True)
 img.save('data/final.png')
 img.close()
