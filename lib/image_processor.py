@@ -147,7 +147,7 @@ class ImageProcessor:
         new_img_height = int((max(sizes, key=lambda x: x[1])[1] + padding[1]) * num_lines)
         print('new img height', new_img_height)
         # Create a new image with the same dimensions as the original image
-        new_img = Image.new('RGB', (original_img.shape[1] + padding[0], new_img_height), color=(255, 255, 255))
+        new_img = Image.new('RGB', (original_img.size[1] + padding[0], new_img_height), color=(255, 255, 255))
 
         # Draw the text onto the new image, adding line breaks as necessary
         draw = ImageDraw.Draw(new_img)
@@ -159,7 +159,7 @@ class ImageProcessor:
         for word in text.split():
             word_width, _ = draw.textsize(word, font=font)
             
-            if x + word_width >= original_img.shape[1]:
+            if x + word_width >= original_img.size[1]:
                 x = 0
                 y += max(sizes, key=lambda x: x[1])[1]
                 
