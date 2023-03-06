@@ -26,10 +26,11 @@ def bulk_resize_images(
 
     for title, replacement_image in replacement_images:
         layer_to_replace = replacement_layer_map[title]
+        
         resized_image = ImageProcessor.resize_image(
-            (layer_to_replace.width, layer_to_replace.height),
             replacement_image,
-            keep_aspect_ratio=('Logo' in title)
+            (layer_to_replace.width, layer_to_replace.height),
+            keep_aspect_ratio='Logo' in title
         )
         print(title, resized_image.width, resized_image.height)
         yield Title_Image_Zip(title, resized_image)

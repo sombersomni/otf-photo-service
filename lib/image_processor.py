@@ -61,6 +61,7 @@ class ImageProcessor:
     #     return cropped_image
     @staticmethod
     def resize_image(replacement_img: Image, original_size: Tuple[int, int], keep_aspect_ratio=False) -> Image:
+        print('Image Processor resize is starting...')
         # Get the sizes and aspect ratios of the original and replacement images
         orig_width, orig_height = original_size
         orig_aspect_ratio = orig_width / orig_height

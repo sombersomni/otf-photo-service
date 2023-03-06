@@ -27,7 +27,7 @@ event_map = {
         "eventKey": "homeTeam"
     },
     "Getty Image": {
-        "value":  "periodgamescores/cropped_img.jpg",
+        "value":  "periodgamescores/cropped_img.png",
         "eventKey": None
     },
     "Period Title": {
@@ -49,6 +49,7 @@ async def generate_controller(s3, http_session):
         # Parse the PSD file with psd_tools
 
         psd_file = psd_tools.PSDImage.open(BytesIO(data))
+        psd_file.topil().save('data/input.png')
         # Get the layer information from the PSD file
         layers = list(flatten_layers(psd_file))
         layers_to_replace = [layer for layer in layers if layer.name in event_map and layer.is_visible()]
@@ -137,17 +138,17 @@ async def generate_controller(s3, http_session):
         print(text_layer.resource_dict)
         print('--------------------')
         print(text_layer.engine_dict)
-        print(psd_file.size[0] / text_layer.width)
+        print(psd_file.size, text_layer.width, text_layer.height)
         # Extract the font information from the text layer
         fill_color = text_layer.resource_dict.get('FontSet', [{}])[0].get('FillColor', (255, 255, 255, 255))
-        font = ImageFont.truetype(BytesIO(fontfile), 80)
-        new_text = 'END 3'
+        font = ImageFont.truetype(BytesIO(fontfile), int(87))
+        new_text = 'END 3 Can I be Longer'
         text_width, text_height = font.getsize(new_text)
         # Create a blank image with an alpha channel
         print(text_width, text_height)
         text_area = text_width * text_height
         layer_area = text_layer.width * text_layer.height
-        text_image = Image.new('RGBA', (text_width, text_height), (0, 0, 0, 0))
+        text_image = Image.new('RGBA', (text_width + 5, text_height + 5), (0, 0, 0, 0))
 
 
         print(text_area, layer_area, layer_area / text_area)
@@ -165,7 +166,7 @@ async def generate_controller(s3, http_session):
             merged_image.alpha_composite(layer_image)
 
         # Save the merged image as a PNG file
-        merged_image.save('output.png', format='PNG')
+        merged_image.save('data/output.png', format='PNG')
     except Exception as e:
         print(e)
         await http_session.close()
