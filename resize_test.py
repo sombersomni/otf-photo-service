@@ -10,6 +10,6 @@ layers = list(flatten_layers(psd_file))
 text_layer = [layer for layer in layers if layer.name == 'Period Title'][-1]
 original_img = text_layer.topil()
 original_img.save('input-text.png')
-with open('data/Druk-Medium-Tial.otf', 'rb') as font_type:
+with open('data/Druk-Medium-Trial.otf', 'rb') as font_type:
   img = ImageProcessor.text_img_generator(original_img, '44', font_type, 89, (2,1))
   img.save('output-text.png')
