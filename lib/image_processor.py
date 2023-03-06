@@ -124,7 +124,7 @@ class ImageProcessor:
     ):
         import cv2
         # Load the image
-        gray = cv2.imdecode(original_img.tobytes(), cv2.IMREAD_GRAYSCALE)
+        gray = cv2.imdecode(np.array(original_img), cv2.IMREAD_GRAYSCALE)
 
         # Apply thresholding to extract the letters
         thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
