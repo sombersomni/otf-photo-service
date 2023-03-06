@@ -140,7 +140,8 @@ class ImageProcessor:
         sizes = [(w, h) for x, y, w, h in boxes]
 
         # Calculate the maximum number of letters that can fit on a single line
-        max_letters_per_line = int(original_img.shape[1] / max(sizes, key=lambda x: x[0])[0])
+        print(original_img.size)
+        max_letters_per_line = int(original_img.size[0] / max(sizes, key=lambda x: x[0])[0])
         print('max letters per line', max_letters_per_line)
         num_lines = len(text) / max_letters_per_line
         new_img_height = int((max(sizes, key=lambda x: x[1])[1] + padding[1]) * num_lines)
