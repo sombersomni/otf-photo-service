@@ -59,21 +59,22 @@ async def psd_edit(session: aiohttp.ClientSession, access_token: str, payload: d
         "x-api-key": API_KEY
     }
     print(headers)
-    response = await session.get(
-        'https://image.adobe.io/pie/psdService/hello',
+    response = await session.post(
+        'https://image.adobe.io/pie/psdService/documentOperations',
+        json=payload,
         headers=headers
     )
     print(response)
-    # data = await response.json()
-    # print(data, response.status)
-    # if response.status >= 400:
-    #   print('Error occurred for photoshop api')
-    #   abort(data.get('code', 400), data.get('title', "Unknown photoshop api error"))
+    data = await response.json()
+    print(data, response.status)
+    if response.status >= 400:
+      print('Error occurred for photoshop api')
+      abort(data.get('code', 400), data.get('title', "Unknown photoshop api error"))
 
-    # url = data.get('_links', {}).get('self', {}).get('href')
-    # if not url:
-    #   abort(400, "Photoshop polling url is invalid")
-    # result = poll_api(access_token, url, timeout=120)
+    url = data.get('_links', {}).get('self', {}).get('href')
+    if not url:
+      abort(400, "Photoshop polling url is invalid")
+    result = poll_api(access_token, url, timeout=120)
     return
 
 async def get_access_token(session: aiohttp.ClientSession) -> str:
