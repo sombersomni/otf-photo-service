@@ -120,7 +120,7 @@ class ImageProcessor:
         text: str,
         font_type: bytes,
         font_size: float | int,
-        padding: Tuple[int, int] = (2,1)):
+        padding: Tuple[int, int]):
         import cv2
         # Load the image
         gray = cv2.imdecode(original_img.tobytes(), cv2.IMREAD_GRAYSCALE)

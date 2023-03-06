@@ -9,5 +9,7 @@ psd_file = psd_tools.PSDImage.open('data/nba-quarter-1080x1920.psd')
 layers = list(flatten_layers(psd_file))
 text_layer = [layer for layer in layers if layer.name == 'Period Title'][-1]
 original_img = text_layer.topil()
+original_img.save('input-text.png')
 with open('data/Druk-Medium-Tial.otf', 'rb') as font_type:
-  img = ImageProcessor.text_img_generator(original_img, '44', font_type, 89)
+  img = ImageProcessor.text_img_generator(original_img, '44', font_type, 89, (2,1))
+  img.save('output-text.png')
