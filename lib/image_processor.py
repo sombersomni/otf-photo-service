@@ -158,11 +158,15 @@ class ImageProcessor:
         x, y = 0, 0
 
         for word in text.split():
+            print('each word', word)
+            print('x, y', x, y)
             word_width, _ = draw.textsize(word, font=font)
-            
+            print('new word width')
             if x + word_width >= original_img.size[1]:
+                new_max = max(sizes, key=lambda x: x[1])[1]
+                print('new max calculated', new_max)
                 x = 0
-                y += max(sizes, key=lambda x: x[1])[1]
+                y += new_max
                 
             draw.text((x, y), word, font=font, fill=(255,255,255))
             
