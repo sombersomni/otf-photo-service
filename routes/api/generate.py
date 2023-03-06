@@ -7,7 +7,6 @@ import psd_tools
 from PIL import Image, ImageFont, ImageDraw
 from flask import g, jsonify, request
 from constants import Key_Title_Zip, Title_Image_Zip
-from helpers.photoshop import get_access_token, psd_edit
 from itertools import chain
 from helpers.psd_layers import bulk_layer_composites, bulk_resize_images, flatten_layers
 from helpers.buckets import (
