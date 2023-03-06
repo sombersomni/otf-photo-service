@@ -116,11 +116,12 @@ class ImageProcessor:
     
     @staticmethod
     def text_img_generator(
-        original_img: Image,
-        text: str,
-        font_type: bytes,
-        font_size: float | int,
-        padding: Tuple[int, int]):
+        original_img,
+        text,
+        font_type,
+        font_size,
+        padding
+    ):
         import cv2
         # Load the image
         gray = cv2.imdecode(original_img.tobytes(), cv2.IMREAD_GRAYSCALE)
