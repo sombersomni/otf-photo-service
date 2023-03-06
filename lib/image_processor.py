@@ -141,7 +141,8 @@ class ImageProcessor:
         # Calculate the maximum number of letters that can fit on a single line
         print(original_img.size)
         print(sizes)
-        max_letters_per_line = int(original_img.size[0] / max(sizes, key=lambda x: x[0])[0])
+        winning_letter_width = max(sizes, key=lambda x: x[0])[0]
+        max_letters_per_line = int(original_img.size[0] / winning_letter_width)
         print('max letters per line', max_letters_per_line)
         num_lines = int(len(text) / max_letters_per_line)
         print('predicted num of lines', num_lines)
@@ -161,12 +162,10 @@ class ImageProcessor:
             print('each word', word)
             print('x, y', x, y)
             word_width, _ = draw.textsize(word, font=font)
-            print('new word width')
-            if x + word_width >= original_img.size[1]:
-                new_max = max(sizes, key=lambda x: x[1])[1]
-                print('new max calculated', new_max)
+            print('new word width', word_width)
+            if x + word_width >= original_img.size[0]:
                 x = 0
-                y += new_max
+                y += winning_letter_width
                 
             draw.text((x, y), word, font=font, fill=(255,255,255))
             
