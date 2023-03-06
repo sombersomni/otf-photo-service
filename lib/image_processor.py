@@ -150,7 +150,7 @@ class ImageProcessor:
         new_img_height = int(original_img.size[1] * num_lines)
         print('new img height', new_img_height)
         # Create a new image with the same dimensions as the original image
-        new_img = Image.new('RGB', (original_img.size[0] + padding[0], new_img_height + padding[1] * num_lines), color=(0,0,0,0))
+        new_img = Image.new('RGB', (original_img.size[0], new_img_height), color=(0,0,0,0))
 
         # Draw the text onto the new image, adding line breaks as necessary
         draw = ImageDraw.Draw(new_img)
@@ -176,5 +176,8 @@ class ImageProcessor:
             draw = ImageDraw.Draw(new_img)
             draw.text((0,0), text, font=font, fill=(255,255,255))    
 
+        # new_img = new_image.rotate(angle, expand=True)
+        # dx, dy = random.randint(-10, 10), random.randint(-10, 10)
+        # new_img = new_image.transform(new_image.size, Image.AFFINE, (1, 0, dx, 0, 1, dy))
         # Save the new image
         return new_img
