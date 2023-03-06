@@ -110,7 +110,6 @@ def smart_crop(image: Image, user_box: Tuple[int,int,int,int]):
     xmin, ymin, xmax, ymax = (0, 0, centered_image.width, centered_image.height)
     draw.rectangle([(xmin, ymin), (xmax, ymax)], outline=(255, 255, 0))
     image.save(output_bbox)
-    image.close()
     return centered_image
 
 def replace_image(original_img: Image, replacement_img: Image) -> Image:
