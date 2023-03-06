@@ -61,9 +61,6 @@ def smart_crop(image: Image, user_box: Tuple[int,int,int,int]):
     cropped_image = image.crop((xmin, ymin, xmax, ymax))
     cropped_image.save('data/first_cropped_img.png')
 
-    # Get the user-specified bounding box
-    user_box = (0, 0, 400, 300)
-
     # Calculate the size of the bounding box that fits within the cropped image
     cropped_width, cropped_height = cropped_image.size
     box_aspect_ratio = user_box[2] / user_box[3]
