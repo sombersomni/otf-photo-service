@@ -4,7 +4,6 @@ import asyncio
 from io import BytesIO
 import boto3
 import psd_tools
-import requests
 from PIL import Image, ImageFont, ImageDraw
 from flask import g, jsonify, request
 from constants import Key_Title_Zip, Title_Image_Zip
