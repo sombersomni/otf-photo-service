@@ -125,7 +125,6 @@ class ImageProcessor:
         import cv2
         # Load the image
         np_img = np.array(original_img)
-        print(np_img)
         gray = cv2.cvtColor(np_img, cv2.COLOR_BGR2GRAY)
         # Apply thresholding to extract the letters
         thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
@@ -141,13 +140,15 @@ class ImageProcessor:
 
         # Calculate the maximum number of letters that can fit on a single line
         print(original_img.size)
+        print(sizes)
         max_letters_per_line = int(original_img.size[0] / max(sizes, key=lambda x: x[0])[0])
         print('max letters per line', max_letters_per_line)
         num_lines = len(text) / max_letters_per_line
-        new_img_height = int((max(sizes, key=lambda x: x[1])[1] + padding[1]) * num_lines)
+        print('predicted num of lines', num_lines)
+        new_img_height = int(original_img.size[1] * num_lines)
         print('new img height', new_img_height)
         # Create a new image with the same dimensions as the original image
-        new_img = Image.new('RGB', (original_img.size[1] + padding[0], new_img_height), color=(0,0,0,0))
+        new_img = Image.new('RGB', (original_img.size[0] + padding[0], new_img_height + padding[1]), color=(0,0,0,0))
 
         # Draw the text onto the new image, adding line breaks as necessary
         draw = ImageDraw.Draw(new_img)
