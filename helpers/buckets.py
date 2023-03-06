@@ -20,7 +20,7 @@ async def get_images_from_s3_keys(client, bucket_name: str, key_title_zipped: It
       return_exceptions=True
     )
 
-async def create_presigned_url(
+async def create_presigned_url_for_psd_layer(
   client,
   bucket_name:str,
   key:str,
@@ -52,12 +52,12 @@ async def create_presigned_url(
     except ClientError as e:
         print(e)
         return None
+    else:
+      # The response contains the presigned URL
+      return (title, response)
 
-    # The response contains the presigned URL
-    return (title, response)
 
-
-async def create_presigned_post(
+async def create_presigned_post_for_psd_layer(
   client,
   bucket_name:str,
   key:str,
@@ -83,15 +83,21 @@ async def create_presigned_post(
     # Generate a presigned S3 POST URL
     try:
         response = await asyncio.to_thread(
-          client.generate_presigned_post,
-          bucket_name,
-          key,
-          Fields=fields,
-          Conditions=conditions,
-          ExpiresIn=expiration
+          client.generate_presigned_url,
+          ClientMethod='put_object',
+          Params={
+            'Bucket': bucket_name,
+            'Key': key,
+            "ACL": "public-read",
+            "ContentType": "image/png",
+          },
+          ExpiresIn=expiration,
+          HttpMethod='Put'
         )
     except ClientError as e:
         return None
-
-    # The response contains the presigned URL and required fields
-    return (title, response)
+    else:
+      # format response to post url
+      print('trying url')
+      # The response contains the layer title and the presigned URL
+      return (title,response)
