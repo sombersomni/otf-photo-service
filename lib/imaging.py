@@ -88,6 +88,7 @@ def smart_crop(image: Image, user_box: Tuple[int,int,int,int]):
 
     # Save the resized image
     centered_image.save(output_file)
+    
 
     # Draw bounding boxes over the original image
     draw = ImageDraw.Draw(image)
