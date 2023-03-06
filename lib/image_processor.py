@@ -167,14 +167,14 @@ class ImageProcessor:
             if line_break and x + word_width >= original_img.size[0]:
                     x = 0
                     y += winning_letter_width
+            draw.text((x, y), word, font=font, fill=(255,255,255))    
             x += word_width + draw.textsize(' ', font=font)[0]
 
         # recalculate draw image with new predicted size
         if not line_break:
             new_img = Image.new('RGB', (x, new_img_height + padding[1]), color=(0,0,0,0))
             draw = ImageDraw.Draw(new_img)
-        
-        draw.text((x, y), text, font=font, fill=(255,255,255))    
+            draw.text((0,0), text, font=font, fill=(255,255,255))    
 
         # Save the new image
         return new_img
