@@ -121,7 +121,7 @@ class ImageProcessor:
         font_type,
         font_size,
         padding,
-        line_break: False
+        line_break=False
     ):
         import cv2
         # Load the image
