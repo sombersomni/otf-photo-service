@@ -57,7 +57,9 @@ def smart_crop(image: Image, user_box: Tuple[int,int,int,int]):
     ymin = max(int(ymin), 0)
     xmax = min(int(xmax), image.width)
     ymax = min(int(ymax), image.height)
+    print('first crop bbox', (xmin, ymin, xmax, ymax))
     cropped_image = image.crop((xmin, ymin, xmax, ymax))
+    cropped_image.save('data/first_cropped_img.png')
 
     # Get the user-specified bounding box
     user_box = (0, 0, 400, 300)
@@ -81,8 +83,8 @@ def smart_crop(image: Image, user_box: Tuple[int,int,int,int]):
 
     # Crop the image again using the new bounding box
     centered_image = cropped_image.crop((box_left, box_top, box_right, box_bottom))
-    print((box_left, box_top, box_right, box_bottom))
-    print(user_box)
+    print('final crop', (box_left, box_top, box_right, box_bottom))
+    print('user box', user_box)
     # Resize the centered image to fit within the user-specified bounding box
     # resized_image = centered_image.resize(user_box[2:])
 
