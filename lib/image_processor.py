@@ -163,7 +163,7 @@ class ImageProcessor:
                 x = 0
                 y += max(sizes, key=lambda x: x[1])[1]
                 
-            draw.text((x, y), word, font=font, fill=(0, 0, 0))
+            draw.text((x, y), word, font=font, fill=(255,255,255))
             
             x += word_width + draw.textsize(' ', font=font)[0]
 
