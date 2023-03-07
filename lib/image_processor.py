@@ -189,5 +189,5 @@ class ImageProcessor:
         draw = ImageDraw.Draw(original_img)
         for box in boxes:
             draw.rectangle(box, outline='red', width=3)
-        original_img.save('boxed_font.png')
+        original_img.save('data/boxed_font.png')
         return new_img
