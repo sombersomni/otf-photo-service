@@ -172,7 +172,7 @@ class ImageProcessor:
 
         # recalculate draw image with new predicted size
         if not line_break:
-            new_img = Image.new('RGB', (x + padding * 2, new_img_height + padding * 2), color=(0,0,0,0))
+            new_img = Image.new('RGBA', (x + padding * 2, new_img_height + padding * 2), color=(0,0,0,0))
             draw = ImageDraw.Draw(new_img)
             draw.text((padding, padding), text, font=font, fill=(255,255,255))    
 
