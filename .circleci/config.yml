@@ -6,19 +6,19 @@ jobs:
     executor: python/default
     steps:
       - checkout
+      - run:
+          name: Upgrade pip
+          command: |
+            pip install --upgrade pip
       - python/install-packages:
-          pre-install-steps:
-            steps:
-              - run: python -m pip install --upgrade pip
           pip-dependency-file: requirements.txt
           pkg-manager: pip
       - run:
+          name: Run tests
           command: |
-            python --version
+            python -m unittest discover
             
 workflows:
   main:
     jobs:
       - build
-      - python/test:
-          pkg-manager: pip
