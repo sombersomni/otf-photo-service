@@ -150,7 +150,7 @@ class ImageProcessor:
         new_img_height = int(original_img.size[1] * num_lines)
         print('new img height', new_img_height)
         # Create a new image with the same dimensions as the original image
-        new_img = Image.new('RGB', (original_img.size[0], new_img_height), color=(0,0,0,0))
+        new_img = Image.new('RGBA', (original_img.size[0], new_img_height), color=(0,0,0,0))
 
         # Draw the text onto the new image, adding line breaks as necessary
         draw = ImageDraw.Draw(new_img)
@@ -172,7 +172,7 @@ class ImageProcessor:
 
         # recalculate draw image with new predicted size
         if not line_break:
-            new_img = Image.new('RGB', (x, new_img_height + padding[1]), color=(0,0,0,0))
+            new_img = Image.new('RGB', (x, new_img_height), color=(0,0,0,0))
             draw = ImageDraw.Draw(new_img)
             draw.text((0,0), text, font=font, fill=(255,255,255))    
 
