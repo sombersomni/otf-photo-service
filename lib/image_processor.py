@@ -174,7 +174,7 @@ class ImageProcessor:
         if not line_break:
             new_img = Image.new('RGBA', (x + padding * 2, new_img_height + padding * 2), color=(0,0,0,0))
             draw = ImageDraw.Draw(new_img)
-            draw.text((padding, padding), text, font=font, fill=(255,255,255))    
+            draw.text((padding, padding / 2), text, font=font, fill=(255,255,255))    
 
         # new_img = new_image.rotate(angle, expand=True)
         # dx, dy = random.randint(-10, 10), random.randint(-10, 10)
