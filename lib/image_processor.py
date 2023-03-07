@@ -179,7 +179,7 @@ class ImageProcessor:
             font = font.font_variant(size=font_size)
             new_img = Image.new('RGBA', (x + padding * 2, new_img_height + padding), color=(0,0,0,0))
             draw = ImageDraw.Draw(new_img)
-            draw.text((padding), text, font=font, fill=(255,255,255))    
+            draw.text((padding, 0), text, font=font, fill=(255,255,255))    
 
         # new_img = new_image.rotate(angle, expand=True)
         # dx, dy = random.randint(-10, 10), random.randint(-10, 10)
