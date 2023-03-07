@@ -134,55 +134,53 @@ class ImageProcessor:
         np_img = np.array(original_img)
         gray = cv2.cvtColor(np_img, cv2.COLOR_BGR2GRAY)
         # Apply thresholding to extract the letters
-        thresh = cv2.adaptiveThreshold(gray,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,\
-            cv2.THRESH_BINARY,11,2)
-        print(thresh)
+        thresh = cv2.adaptiveThreshold(gray,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,11,2)
         # Find the contours of the letters
-        # contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        # # Get the bounding boxes of the letters
-        # boxes = [cv2.boundingRect(c) for c in contours]
-        # print(boxes)
-        # # Calculate the width and height of each letter
-        # sizes = [(w, h) for x, y, w, h in boxes]
+        # Get the bounding boxes of the letters
+        boxes = [cv2.boundingRect(c) for c in contours]
+        print(boxes)
+        # Calculate the width and height of each letter
+        sizes = [(w, h) for x, y, w, h in boxes]
 
-        # # Calculate the maximum number of letters that can fit on a single line
-        # print(original_img.size)
-        # print(sizes)
-        # winning_letter_width = max(sizes, key=lambda x: x[0])[0]
-        # max_letters_per_line = int(original_img.size[0] / winning_letter_width)
-        # print('max letters per line', max_letters_per_line)
-        # num_lines = int(len(text) / max_letters_per_line)
-        # print('predicted num of lines', num_lines)
-        # new_img_height = int(original_img.size[1] * num_lines)
-        # print('new img height', new_img_height)
-        # # Create a new image with the same dimensions as the original image
-        # new_img = Image.new('RGBA', (original_img.size[0], new_img_height), color=(0,0,0,0))
+        # Calculate the maximum number of letters that can fit on a single line
+        print(original_img.size)
+        print(sizes)
+        winning_letter_width = max(sizes, key=lambda x: x[0])[0]
+        max_letters_per_line = int(original_img.size[0] / winning_letter_width)
+        print('max letters per line', max_letters_per_line)
+        num_lines = int(len(text) / max_letters_per_line)
+        print('predicted num of lines', num_lines)
+        new_img_height = int(original_img.size[1] * num_lines)
+        print('new img height', new_img_height)
+        # Create a new image with the same dimensions as the original image
+        new_img = Image.new('RGBA', (original_img.size[0], new_img_height), color=(0,0,0,0))
 
-        # # Draw the text onto the new image, adding line breaks as necessary
-        # draw = ImageDraw.Draw(new_img)
-        # font = ImageFont.truetype(font_type, size=font_size)
+        # Draw the text onto the new image, adding line breaks as necessary
+        draw = ImageDraw.Draw(new_img)
+        font = ImageFont.truetype(font_type, size=font_size)
 
-        # x, y = 0, 0
+        x, y = 0, 0
 
-        # for word in text.split():
-        #     print('each word', word)
-        #     print('x, y', x, y)
-        #     word_width, _ = draw.textsize(word, font=font)
-        #     print('new word width', word_width)
-        #     if line_break and x + word_width >= original_img.size[0]:
-        #             x = 0
-        #             y += winning_letter_width
-        #     draw.text((x, y), word, font=font, fill=(255,255,255))    
-        #     x += word_width + draw.textsize(' ', font=font)[0]
+        for word in text.split():
+            print('each word', word)
+            print('x, y', x, y)
+            word_width, _ = draw.textsize(word, font=font)
+            print('new word width', word_width)
+            if line_break and x + word_width >= original_img.size[0]:
+                    x = 0
+                    y += winning_letter_width
+            draw.text((x, y), word, font=font, fill=(255,255,255))    
+            x += word_width + draw.textsize(' ', font=font)[0]
 
-        # # new_img = new_image.rotate(angle, expand=True)
-        # # dx, dy = random.randint(-10, 10), random.randint(-10, 10)
-        # # new_img = new_image.transform(new_image.size, Image.AFFINE, (1, 0, dx, 0, 1, dy))
-        # # Save the new image
+        # new_img = new_image.rotate(angle, expand=True)
+        # dx, dy = random.randint(-10, 10), random.randint(-10, 10)
+        # new_img = new_image.transform(new_image.size, Image.AFFINE, (1, 0, dx, 0, 1, dy))
+        # Save the new image
 
-        # draw = ImageDraw.Draw(original_img)
-        # for box in boxes:
-        #     draw.rectangle(box, outline='red', width=3)
-        # original_img.save('data/boxed_font.png')
-        return original_img
+        draw = ImageDraw.Draw(original_img)
+        for box in boxes:
+            draw.rectangle(box, outline='red', width=3)
+        original_img.save('data/boxed_font.png')
+        return new_img
