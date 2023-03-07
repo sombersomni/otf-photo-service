@@ -127,7 +127,7 @@ class ImageProcessor:
         import cv2
         # recompute font size to pixels
         # we can expect the format to be in pt (point) for now
-        font_size = (font_size * (4/3)) if font_format == 'pt' else font_size
+        font_size = int((font_size * (4/3)) if font_format == 'pt' else font_size)
         # Load the image
         np_img = np.array(original_img)
         gray = cv2.cvtColor(np_img, cv2.COLOR_BGR2GRAY)
