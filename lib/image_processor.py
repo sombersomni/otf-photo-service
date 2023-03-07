@@ -138,8 +138,8 @@ class ImageProcessor:
         contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         # Get the bounding boxes of the letters
-        boxes = (cv2.boundingRect(c) for c in contours)
-
+        boxes = [cv2.boundingRect(c) for c in contours]
+        print(boxes)
         # Calculate the width and height of each letter
         sizes = [(w, h) for x, y, w, h in boxes]
 
@@ -176,13 +176,18 @@ class ImageProcessor:
         # recalculate draw image with new predicted size
         if not line_break:
             font_size *= int(original_img.size[0] / new_img.size[0])
-            font = font.font_variant(size=font_size)
+            font_copy = font.font_variant(size=font_size)
             new_img = Image.new('RGBA', (x + padding * 2, new_img_height + padding), color=(0,0,0,0))
             draw = ImageDraw.Draw(new_img)
-            draw.text((padding, 0), text, font=font, fill=(255,255,255))    
+            draw.text((padding, 0), text, font=font_copy, fill=(255,255,255))    
 
         # new_img = new_image.rotate(angle, expand=True)
         # dx, dy = random.randint(-10, 10), random.randint(-10, 10)
         # new_img = new_image.transform(new_image.size, Image.AFFINE, (1, 0, dx, 0, 1, dy))
         # Save the new image
+
+        draw = ImageDraw.Draw(original_img)
+        for box in boxes:
+            draw.rectangle(box, outline='red', width=3)
+        original_img.save('boxed_font.png')
         return new_img
