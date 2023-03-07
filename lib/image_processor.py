@@ -122,12 +122,14 @@ class ImageProcessor:
         font_size,
         padding,
         line_break=False,
-        font_format='pt'
+        font_format='pt',
+        dpi=72
     ):
         import cv2
         # recompute font size to pixels
         # we can expect the format to be in pt (point) for now
         font_size = int((font_size * (4/3)) if font_format == 'pt' else font_size)
+        font_size = int(font_size * (dpi / 72))
         # Load the image
         np_img = np.array(original_img)
         gray = cv2.cvtColor(np_img, cv2.COLOR_BGR2GRAY)
@@ -172,14 +174,6 @@ class ImageProcessor:
                     y += winning_letter_width
             draw.text((x, y), word, font=font, fill=(255,255,255))    
             x += word_width + draw.textsize(' ', font=font)[0]
-
-        # recalculate draw image with new predicted size
-        if not line_break:
-            font_size *= int(original_img.size[0] / new_img.size[0])
-            font_copy = font.font_variant(size=font_size)
-            new_img = Image.new('RGBA', (x + padding * 2, new_img_height + padding), color=(0,0,0,0))
-            draw = ImageDraw.Draw(new_img)
-            draw.text((padding, 0), text, font=font_copy, fill=(255,255,255))    
 
         # new_img = new_image.rotate(angle, expand=True)
         # dx, dy = random.randint(-10, 10), random.randint(-10, 10)
