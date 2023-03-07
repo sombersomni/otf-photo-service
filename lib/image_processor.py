@@ -121,9 +121,13 @@ class ImageProcessor:
         font_type,
         font_size,
         padding,
-        line_break=False
+        line_break=False,
+        font_format='pt'
     ):
         import cv2
+        # recompute font size to pixels
+        # we can expect the format to be in pt (point) for now
+        font_size = (font_size * (4/3)) if font_format == 'pt' else font_size
         # Load the image
         np_img = np.array(original_img)
         gray = cv2.cvtColor(np_img, cv2.COLOR_BGR2GRAY)
@@ -172,9 +176,11 @@ class ImageProcessor:
 
         # recalculate draw image with new predicted size
         if not line_break:
-            new_img = Image.new('RGBA', (x + padding * 2, new_img_height + padding * 2), color=(0,0,0,0))
+            font_size *= original_img.size[0] / new_img.size[0]
+            font = ImageFont.truetype(font_type, size=font_size)
+            new_img = Image.new('RGBA', (x + padding * 2, new_img_height + padding), color=(0,0,0,0))
             draw = ImageDraw.Draw(new_img)
-            draw.text((padding, padding / 2), text, font=font, fill=(255,255,255))    
+            draw.text((padding), text, font=font, fill=(255,255,255))    
 
         # new_img = new_image.rotate(angle, expand=True)
         # dx, dy = random.randint(-10, 10), random.randint(-10, 10)

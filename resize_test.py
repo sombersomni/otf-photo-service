@@ -14,5 +14,11 @@ text_layer = [layer for layer in layers if layer.name == 'Period Title'][-1]
 original_img = text_layer.topil()
 original_img.save('data/input-text.png')
 with open('data/Druk-Medium-Trial.otf', 'rb') as font_type:
-  img = ImageProcessor.text_img_generator(original_img, 'END 3', font_type, 78, 5)
+  img = ImageProcessor.text_img_generator(original_img, 'END 3', font_type, 18.19, 5)
   img.save('data/output-text.png')
+text_layer = [layer for layer in layers if layer.name == 'Home Score'][-1]
+original_img = text_layer.topil()
+original_img.save('data/input-text-num.png')
+with open('data/Druk-Heavy-Trial.otf', 'rb') as font_type:
+  img = ImageProcessor.text_img_generator(original_img, '123', font_type, 66, 5)
+  img.save('data/output-text-num.png')
