@@ -158,8 +158,7 @@ class ImageProcessor:
 
         # Draw the text onto the new image, adding line breaks as necessary
         draw = ImageDraw.Draw(new_img)
-
-        font = ImageFont.truetype(font_type, size=font_size)
+        font = ImageFont.truetype(BytesIO(font_type), size=font_size)
 
         x, y = 0, 0
 
@@ -177,7 +176,7 @@ class ImageProcessor:
         # recalculate draw image with new predicted size
         if not line_break:
             font_size *= int(original_img.size[0] / new_img.size[0])
-            font = ImageFont.truetype(font_type, size=int(font_size))
+            font = ImageFont.truetype(BytesIO(font_type), size=int(font_size))
             new_img = Image.new('RGBA', (x + padding * 2, new_img_height + padding), color=(0,0,0,0))
             draw = ImageDraw.Draw(new_img)
             draw.text((padding), text, font=font, fill=(255,255,255))    
