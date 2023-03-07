@@ -1,6 +1,9 @@
 # Set the base image to the official Python image
-FROM python:3.10-alpine
+FROM python:3.8-slim as build
 
+RUN apt update && \
+    apt install --no-install-recommends -y build-essential gcc && \
+    apt clean && rm -rf /var/lib/apt/lists/*
 # Pass environment variables to the Docker build
 ARG FLASK_RUN_PORT=8080
 ARG FLASK_DEBUG=0
@@ -22,7 +25,12 @@ WORKDIR /app
 # Copy the requirements file and install the dependencies
 COPY requirements.txt .
 RUN python3 -m pip install --upgrade pip
-RUN python3 -m pip install --no-cache-dir -r requirements.txt
+RUN python3 -m pip install Flask flask[async] flask-cors aiohttp aiofiles Pillow psd-tools
+# install integrations
+RUN python3 -m pip install boto3
+# install machine learning tools
+RUN python3 -m pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/cpu
+RUN python3 -m pip install opencv-python
 
 # Copy the Python script into the container
 COPY app.py .
@@ -33,5 +41,6 @@ COPY helpers helpers
 COPY routes routes
 COPY middleware middleware
 
-# Run the Python script with Celery
-CMD ["flask", "run", "--reload"]
+EXPOSE 5000
+
+CMD ["flask", "run", "--host=0.0.0.0"]

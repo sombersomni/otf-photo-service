@@ -26,4 +26,4 @@ def index():
     )
 
 if __name__ == '__main__':
-  app.run(debug=True, load_dotenv=True)
+  app.run(load_dotenv=True)
