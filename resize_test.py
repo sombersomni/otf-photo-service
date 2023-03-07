@@ -16,6 +16,7 @@ with open('data/boxed-text-test.png', 'rb') as file:
   original_img = Image.open(file)
 
 with open('data/Arial.otf', 'rb') as font_type:
+  original_img.show()
   img = ImageProcessor.text_img_generator(original_img, 'BOTTLE WATER IS BAD', font_type, 72, padding=5, dpi=72)
   img.save('data/output-text.png')
 # text_layer = [layer for layer in layers if layer.name == 'Home Score'][-1]
