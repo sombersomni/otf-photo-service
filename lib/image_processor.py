@@ -3,6 +3,22 @@ from typing import Tuple
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
+def get_text_data(layer):
+    # Extract font for each substring in the text.
+    font_set = layer.resource_dict['FontSet']
+    run_data = layer.engine_dict.get('StyleRun', {}).get('RunArray', [])
+    style_sheets = [style.get('StyleSheet', {}).get('StyleSheetData', {}) for style in run_data]
+    if len(style_sheets) == 0:
+        raise Exception("No style sheets found")
+    style_sheet = style_sheets[0]
+    font_index = style_sheet.get('Font')
+    font = font_set[font_index]
+    return {
+       "name": font['Name'].value,
+       "size": style_sheet['FontSize'],
+       "affineTransform": layer.transform,
+       "data": style_sheet,
+    }
 
 class ImageProcessor:
     @staticmethod
@@ -115,48 +131,38 @@ class ImageProcessor:
         return new_img
     
     @staticmethod
-    def text_img_generator(
-        original_img,
+    def replicate_text_image(
+        layer,
         text,
-        font_type,
-        font_size,
-        padding,
+        padding = 4,
         line_break=False,
         font_format='pt',
         dpi=72
     ):
-        import cv2
         # recompute font size to pixels
         # we can expect the format to be in pt (point) for now
-        font_size = int((font_size * (4/3)) if font_format == 'pt' else font_size)
-        font_size = int(font_size * (dpi / 72))
+        text_data = get_text_data(layer)
+        print(type(text_data['name']))
+        font_name = text_data['name'].replace('\'', '')
+        font_type = open(f"data/{font_name}.otf", 'rb')
+        # use the affine transform vertical scale for now
+        affineTransform = text_data['affineTransform']
+        print(type(affineTransform))
+        print(affineTransform[1:3])
+        font_size = int(text_data['size'] * affineTransform[3])
         # Load the image
-        np_img = np.array(original_img)
-        gray = cv2.cvtColor(np_img, cv2.COLOR_BGR2GRAY)
-        # Apply thresholding to extract the letters
-        thresh = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)[1]
-
-        # Find the contours of the letters
-        contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-        # Get the bounding boxes of the letters
-        boxes = [cv2.boundingRect(c) for c in contours]
-        print(boxes)
-        # Calculate the width and height of each letter
-        sizes = [(w, h) for x, y, w, h in boxes]
-
-        # Calculate the maximum number of letters that can fit on a single line
-        print(original_img.size)
-        print(sizes)
-        winning_letter_width = max(sizes, key=lambda x: x[0])[0]
-        max_letters_per_line = int(original_img.size[0] / winning_letter_width)
+        print(len(layer.text.replace(' ', '')))
+        letter_width = font_size / len(layer.text.replace(' ', ''))
+        print('font size', font_size)
+        print('letter width', letter_width)
+        max_letters_per_line = int(layer.size[0] / letter_width)
         print('max letters per line', max_letters_per_line)
         num_lines = int(len(text) / max_letters_per_line)
         print('predicted num of lines', num_lines)
-        new_img_height = int(original_img.size[1] * num_lines)
+        new_img_height = int(layer.size[1] * num_lines)
         print('new img height', new_img_height)
         # Create a new image with the same dimensions as the original image
-        new_img = Image.new('RGBA', (original_img.size[0], new_img_height), color=(0,0,0,0))
+        new_img = Image.new('RGBA', (layer.size[0], new_img_height), color=(0,0,0,0))
 
         # Draw the text onto the new image, adding line breaks as necessary
         draw = ImageDraw.Draw(new_img)
@@ -169,19 +175,18 @@ class ImageProcessor:
             print('x, y', x, y)
             word_width, _ = draw.textsize(word, font=font)
             print('new word width', word_width)
-            if line_break and x + word_width >= original_img.size[0]:
+            if line_break and x + word_width >= layer.size[0]:
                     x = 0
-                    y += winning_letter_width
+                    y += letter_width
             draw.text((x, y), word, font=font, fill=(255,255,255))    
             x += word_width + draw.textsize(' ', font=font)[0]
 
         # new_img = new_image.rotate(angle, expand=True)
         # dx, dy = random.randint(-10, 10), random.randint(-10, 10)
-        # new_img = new_image.transform(new_image.size, Image.AFFINE, (1, 0, dx, 0, 1, dy))
+        # the sheer positions are b and d
+        # a and e are scale
+        # c, f are for position
+        transformed_img = new_img.transform(new_img.size, Image.AFFINE, (1, affineTransform[1], 0, affineTransform[2], 1, padding / 2))
         # Save the new image
-
-        draw = ImageDraw.Draw(original_img)
-        for box in boxes:
-            draw.rectangle(box, outline='red', width=3)
-        original_img.save('data/boxed_font.png')
-        return new_img
+        transformed_img.show()
+        return transformed_img

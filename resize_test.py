@@ -3,24 +3,30 @@ from PIL import Image
 from lib.image_processor import ImageProcessor
 from helpers.psd_layers import flatten_layers
 
+def get_text_data(layer):
+    # Extract font for each substring in the text.
+    font_set = layer.resource_dict['FontSet']
+    run_data = layer.engine_dict.get('StyleRun', {}).get('RunArray', [])
+    style_sheets = [style.get('StyleSheet', {}).get('StyleSheetData', {}) for style in run_data]
+    if len(style_sheets) == 0:
+        raise Exception("No style sheets found")
+    style_sheet = style_sheets[0]
+    font_index = style_sheet.get('Font')
+    font = font_set[font_index]
+    return {
+       "name": font['Name'],
+       "size": style_sheet['FontSize'],
+       "affineTransform": layer.transform,
+       "data": style_sheet,
+    }
 
-# psd_file = psd_tools.PSDImage.open('data/nba-quarter-1080x1920.psd')
-# # Get the layer information from the PSD file
-# par = psd_file.image_resources.get(psd_tools.constants.Resource.PIXEL_ASPECT_RATIO)
-# print(psd_file.depth)
-# print(par.name, par.data)
-# layers = list(flatten_layers(psd_file))
-# text_layer = [layer for layer in layers if layer.name == 'Period Title'][-1]
-# original_img = text_layer.topil()
-with open('data/boxed-text-test.png', 'rb') as file:
-  original_img = Image.open(file)
-
-  with open('data/Arial.otf', 'rb') as font_type:
-    img = ImageProcessor.text_img_generator(original_img, 'BOTTLE WATER IS BAD', font_type, 72, padding=5, dpi=72)
-    img.save('data/output-text.png')
-# text_layer = [layer for layer in layers if layer.name == 'Home Score'][-1]
-# original_img = text_layer.topil()
-# original_img.save('data/input-text-num.png')
-# with open('data/Druk-Heavy-Trial.otf', 'rb') as font_type:
-#   img = ImageProcessor.text_img_generator(original_img, '123', font_type, 66, 5)
-#   img.save('data/output-text-num.png')
+psd_file = psd_tools.PSDImage.open('data/nba-quarter-1080x1920.psd')
+# Get the layer information from the PSD file
+par = psd_file.image_resources.get(psd_tools.constants.Resource.PIXEL_ASPECT_RATIO)
+print(psd_file.depth)
+print(par.name, par.data)
+layers = list(flatten_layers(psd_file))
+text_layer = [layer for layer in layers if layer.name == 'Period Title'][-1]
+a = (1,2,3,4,5,6)
+print(a[:4])
+ImageProcessor.replicate_text_image(text_layer, 'END 4', padding=5, dpi=72)
