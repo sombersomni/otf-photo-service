@@ -172,9 +172,9 @@ class ImageProcessor:
 
         # recalculate draw image with new predicted size
         if not line_break:
-            new_img = Image.new('RGB', (x, new_img_height), color=(0,0,0,0))
+            new_img = Image.new('RGB', (x + padding * 2, new_img_height + padding * 2), color=(0,0,0,0))
             draw = ImageDraw.Draw(new_img)
-            draw.text((0,0), text, font=font, fill=(255,255,255))    
+            draw.text((padding, padding), text, font=font, fill=(255,255,255))    
 
         # new_img = new_image.rotate(angle, expand=True)
         # dx, dy = random.randint(-10, 10), random.randint(-10, 10)
