@@ -26,7 +26,7 @@ par = psd_file.image_resources.get(psd_tools.constants.Resource.PIXEL_ASPECT_RAT
 print(psd_file.depth)
 print(par.name, par.data)
 layers = list(flatten_layers(psd_file))
-text_layer = [layer for layer in layers if layer.name == 'Period Title'][-1]
-a = (1,2,3,4,5,6)
-print(a[:4])
-ImageProcessor.replicate_text_image(text_layer, 'END 4', padding=5, dpi=72)
+text_layers = [layer for layer in layers if layer.kind == 'type']
+for text_layer in text_layers:
+  print(text_layer.name)
+  ImageProcessor.replicate_text_image(text_layer, text_layer.text.upper() , padding=5, dpi=300)

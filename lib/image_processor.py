@@ -148,7 +148,7 @@ class ImageProcessor:
         # use the affine transform vertical scale for now
         affineTransform = text_data['affineTransform']
         print(type(affineTransform))
-        print(affineTransform[1:3])
+        print(affineTransform)
         font_size = int(text_data['size'] * affineTransform[3])
         # Load the image
         print(len(layer.text.replace(' ', '')))
@@ -186,7 +186,13 @@ class ImageProcessor:
         # the sheer positions are b and d
         # a and e are scale
         # c, f are for position
-        transformed_img = new_img.transform(new_img.size, Image.AFFINE, (1, affineTransform[1], 0, affineTransform[2], 1, padding / 2))
+        transformed_img = new_img.transform(new_img.size, Image.AFFINE,(
+            1,
+            -1 * affineTransform[2] / affineTransform[0],
+            0,
+            -1 * affineTransform[1] / affineTransform[3],
+            1,
+            -padding / 2
+        ))
         # Save the new image
-        transformed_img.show()
         return transformed_img
