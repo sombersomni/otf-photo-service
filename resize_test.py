@@ -1,4 +1,5 @@
 import psd_tools
+import time
 from PIL import Image
 from lib.image_processor import ImageProcessor
 from helpers.psd_layers import flatten_layers
@@ -29,4 +30,6 @@ layers = list(flatten_layers(psd_file))
 text_layers = [layer for layer in layers if layer.kind == 'type']
 for text_layer in text_layers:
   print(text_layer.name)
-  ImageProcessor.replicate_text_image(text_layer, text_layer.text.upper() , padding=5, dpi=300)
+  img = ImageProcessor.replicate_text_image(text_layer, text_layer.text.upper() , padding=5, dpi=300)
+  img.show()
+  time.sleep(2)

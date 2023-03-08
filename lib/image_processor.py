@@ -142,13 +142,12 @@ class ImageProcessor:
         # recompute font size to pixels
         # we can expect the format to be in pt (point) for now
         text_data = get_text_data(layer)
+        print('layer size', layer.size)
         print(type(text_data['name']))
         font_name = text_data['name'].replace('\'', '')
         font_type = open(f"data/{font_name}.otf", 'rb')
         # use the affine transform vertical scale for now
         affineTransform = text_data['affineTransform']
-        print(type(affineTransform))
-        print(affineTransform)
         font_size = int(text_data['size'] * affineTransform[3])
         # Load the image
         print(len(layer.text.replace(' ', '')))
@@ -162,37 +161,45 @@ class ImageProcessor:
         new_img_height = int(layer.size[1] * num_lines)
         print('new img height', new_img_height)
         # Create a new image with the same dimensions as the original image
-        new_img = Image.new('RGBA', (layer.size[0], new_img_height), color=(0,0,0,0))
+        new_img = Image.new('RGBA', (layer.width, layer.height), color=(0,0,0,0))
 
         # Draw the text onto the new image, adding line breaks as necessary
         draw = ImageDraw.Draw(new_img)
         font = ImageFont.truetype(font_type, size=font_size)
 
         x, y = 0, 0
-
+        word_positions = []
+        word_sizes = []
         for word in text.split():
-            print('each word', word)
-            print('x, y', x, y)
-            word_width, _ = draw.textsize(word, font=font)
-            print('new word width', word_width)
+            word_width, word_height = draw.textsize(word, font=font)
+            word_sizes.append((word_width, word_height))
             if line_break and x + word_width >= layer.size[0]:
                     x = 0
-                    y += letter_width
-            draw.text((x, y), word, font=font, fill=(255,255,255))    
+                    y += word_height + padding
+            word_positions.append((x, y))
             x += word_width + draw.textsize(' ', font=font)[0]
-
+        max_word_height = max([height for _, height in word_sizes])
+        print('max word height', max_word_height)
+        print(list(zip(word_positions, text.split())))
+        new_img = Image.new('RGBA', (layer.width + padding * 2, max_word_height + padding * 2), color=(0,0,0,0))
+        # Draw the text onto the new image, adding line breaks as necessary
+        draw = ImageDraw.Draw(new_img)
+        for position, word in zip(word_positions, text.split()):
+            draw.text(position, word, font=font, fill=(255,255,255))   
         # new_img = new_image.rotate(angle, expand=True)
         # dx, dy = random.randint(-10, 10), random.randint(-10, 10)
         # the sheer positions are b and d
         # a and e are scale
         # c, f are for position
+        print(affineTransform)
         transformed_img = new_img.transform(new_img.size, Image.AFFINE,(
             1,
-            -1 * affineTransform[2] / affineTransform[0],
-            0,
-            -1 * affineTransform[1] / affineTransform[3],
-            1,
-            -padding / 2
+            -1 * (affineTransform[2] / affineTransform[0]),
+            -1 * padding  - (affineTransform[2] / affineTransform[0]),
+            -1 * (affineTransform[1] / affineTransform[3]),
+            1,  
+            -1 * padding - (affineTransform[1] / affineTransform[3])
         ))
+        font_type.close()
         # Save the new image
         return transformed_img
