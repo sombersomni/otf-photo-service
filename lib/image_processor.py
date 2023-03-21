@@ -148,9 +148,9 @@ class ImageProcessor:
         print(font_name)
         font_type = open(f"data/ArialMT.ttf", 'rb')
         # use the affine transform vertical scale for now
-        affineTransform = text_data['affineTransform']
+        affine_transform = text_data['affineTransform']
         font_size = (
-            int(text_data['size'] * affineTransform[3])
+            int(text_data['size'] * affine_transform[3])
         )
         # Load the image
         print(len(layer.text.replace(' ', '')))
@@ -196,17 +196,18 @@ class ImageProcessor:
         # c, f are for position
 
         # (TODO): Try a new transform to center the image
-        print(affineTransform)
-        a, b, c, d, e, f = affineTransform
+        print(affine_transform)
+        a, b, c, d, e, f = affine_transform
         pillow_transform = (2, c * -.5, -5, b * -.5, 2, -5)
+        print(pillow_transform)
         transformed_img = new_img.transform(new_img.size, Image.AFFINE, pillow_transform)
         # transformed_img = new_img.transform(new_img.size, Image.AFFINE,(
-        #     -1 * (affineTransform),
-        #     -1 * (affineTransform[2] / affineTransform[0]),
-        #     -1 * padding  - (affineTransform[2] / affineTransform[0]),
-        #     -1 * (affineTransform[1] / affineTransform[3]),
+        #     -1 * (affine_transform),
+        #     -1 * (affine_transform[2] / affine_transform[0]),
+        #     -1 * padding  - (affine_transform[2] / affine_transform[0]),
+        #     -1 * (affine_transform[1] / affine_transform[3]),
         #     1,  
-        #     -1 * padding - (affineTransform[1] / affineTransform[3])
+        #     -1 * padding - (affine_transform[1] / affine_transform[3])
         # ))
         font_type.close()
         # Save the new image
