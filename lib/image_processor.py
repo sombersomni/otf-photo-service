@@ -21,9 +21,11 @@ def get_text_data(layer):
        "size": int(style_sheet['FontSize']),
        "affineTransform": layer.transform,
        "data": style_sheet,
-       "tracking": style_sheet['Tracking'],
+       "tracking": int(style_sheet.get('Tracking', 20)),
        "fillColor": fill_color_rgb,
-       "allCaps": style_sheet['FontCaps'] == 2
+       "allCaps": style_sheet['FontCaps'] == 2,
+       "leading": int(style_sheet.get('Leading', 20)),
+       "underline": style_sheet['Underline']
     }
 
 
@@ -202,16 +204,9 @@ class ImageProcessor:
         affine_transform = text_data['affineTransform']
         font_size = int(text_data['size'])
         font_fill_color = text_data['fillColor']
-        # Load the image
-        letter_width = font_size / len(layer.text.replace(' ', ''))
-        print('font size', font_size)
-        print('letter width', letter_width)
-        max_letters_per_line = int(layer.size[0] / letter_width)
-        print('max letters per line', max_letters_per_line)
-        num_lines = int(len(text) / max_letters_per_line) if max_letters_per_line > 0 else 0
-        print('predicted num of lines', num_lines)
-        new_img_height = int(layer.size[1] * num_lines)
-        print('new img height', new_img_height)
+        font_leading = text_data['leading']
+        font_tracking = text_data['tracking']
+
         # Create a new image with the same dimensions as the original image
         new_img = Image.new('RGBA', psd_size, color=(0,0,0,0))
 
@@ -224,12 +219,13 @@ class ImageProcessor:
         word_sizes = []
         for word in text.split():
             word_width, word_height = draw.textsize(word, font=font)
+            print(word_width, word_height, layer.size)
             word_sizes.append((word_width, word_height))
-            if line_break and x + word_width >= layer.size[0]:
+            if x + word_width > layer.size[0] + 10:
                     x = 0
-                    y += word_height + padding
+                    y += word_height + font_leading * (font_size / 72)
             word_positions.append((x, y))
-            x += word_width + draw.textsize(' ', font=font)[0]
+            x += word_width + draw.textsize(' ', font=font)[0] * (font_tracking / 20)
         max_word_height = max([height for _, height in word_sizes])
         print(word_sizes)
         print('max word height', max_word_height)
@@ -239,30 +235,19 @@ class ImageProcessor:
         draw = ImageDraw.Draw(new_img)
         for position, word in zip(word_positions, text.split()):
             draw.text(position, word, font=font, fill=font_fill_color)   
-        # new_img = new_image.rotate(angle, expand=True)
-        # dx, dy = random.randint(-10, 10), random.randint(-10, 10)
+
         # the sheer positions are b and d
         # a and e are scale
         # c, f are for position
 
-        # (TODO): Try a new transform to center the image
-        print(affine_transform)
         # a, b, c, d, e, f = affine_transform
         # pillow_transform = (.5, c * -.5, -5, b * -.5, .5, -5)
         matrix = create_matrix(affine_transform)
-
-        # Step 3: Invert the transformation matrix, if necessary
+        # Invert the transformation matrix, if necessary
         inv_matrix = np.linalg.inv(matrix)
         pillow_transform = convert_matrix_to_pillow(inv_matrix)
         transformed_img = new_img.transform(new_img.size, Image.AFFINE, pillow_transform)
-        # transformed_img = new_img.transform(new_img.size, Image.AFFINE,(
-        #     -1 * (affine_transform),
-        #     -1 * (affine_transform[2] / affine_transform[0]),
-        #     -1 * padding  - (affine_transform[2] / affine_transform[0]),
-        #     -1 * (affine_transform[1] / affine_transform[3]),
-        #     1,  
-        #     -1 * padding - (affine_transform[1] / affine_transform[3])
-        # ))
+
         text_x = affine_transform[4]
         text_y = affine_transform[5]
         text_height = max_word_height
@@ -272,17 +257,14 @@ class ImageProcessor:
 
         # Extract the rotation angle from the affine transformation matrix
         rotation_angle = math.degrees(math.atan2(matrix[1, 0], matrix[0, 0]))
-
+        # if any rotation is detected, compute the bounding box around the rotated text
         if abs(rotation_angle) > 0:
             crop_box = get_text_bounding_box(transformed_img)
             print(crop_box)
 
         else:
             crop_box = (text_x, text_y, text_x + layer.width, text_y + layer.height)
-        print("++++++++")
         left, top, right, bottom = crop_box
-        print(crop_box)
-        print((left - padding, top - padding, right + padding, bottom + padding))
         cropped_img = transformed_img.crop((left - padding, top - padding * 0.5, right + padding, bottom + padding * 2))
         font_type.close()
         # Save the new image
