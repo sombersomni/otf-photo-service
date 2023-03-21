@@ -23,7 +23,7 @@ def get_text_data(layer):
        "data": style_sheet,
        "tracking": int(style_sheet.get('Tracking', 20)),
        "fillColor": fill_color_rgb,
-       "allCaps": style_sheet['FontCaps'] == 2,
+       "allCaps": int(style_sheet.get('FontCaps', 0)) == 2, # 2 means its all caps
        "leading": int(style_sheet.get('Leading', 20)),
        "underline": style_sheet['Underline']
     }
@@ -199,7 +199,8 @@ class ImageProcessor:
         if text_data['allCaps']:
             text = text.upper()
         font_name = text_data['name'].replace('\'', '')
-        font_type = open(f"data/ArialMT.ttf", 'rb')
+        print(font_name)
+        font_type = open(f"data/{font_name}.ttf", 'rb')
         # use the affine transform vertical scale for now
         affine_transform = text_data['affineTransform']
         font_size = int(text_data['size'])
@@ -217,15 +218,17 @@ class ImageProcessor:
         x, y = 0, 0
         word_positions = []
         word_sizes = []
+        # (TODO:xp) build the text string with new line characters instead of building out each word
         for word in text.split():
-            word_width, word_height = draw.textsize(word, font=font)
+            word_width, word_height = draw.textlength(word, font=font)
             print(word_width, word_height, layer.size)
             word_sizes.append((word_width, word_height))
+            # use temp padding of 10 until better calculation available
             if x + word_width > layer.size[0] + 10:
                     x = 0
                     y += word_height + font_leading * (font_size / 72)
             word_positions.append((x, y))
-            x += word_width + draw.textsize(' ', font=font)[0] * (font_tracking / 20)
+            x += word_width + draw.textlength(' ', font=font)[0]
         max_word_height = max([height for _, height in word_sizes])
         print(word_sizes)
         print('max word height', max_word_height)
