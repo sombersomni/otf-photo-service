@@ -1,7 +1,8 @@
 from io import BytesIO
 from typing import Tuple
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+import math
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 def get_text_data(layer):
     # Extract font for each substring in the text.
@@ -20,9 +21,6 @@ def get_text_data(layer):
        "data": style_sheet,
     }
 
-import numpy as np
-from PIL import Image, ImageOps
-
 # Step 1: Extract the affine transform values from the psd-tools object
 # Assuming you have already extracted the layer and have the transform values
 # transform_values = (a, b, c, d, e, f)
@@ -37,6 +35,35 @@ def create_matrix(transform_values):
 def convert_matrix_to_pillow(matrix):
     # return (matrix[0, 0], matrix[0, 1], matrix[2, 0], matrix[1, 0], matrix[1, 1], matrix[2, 1])
     return (matrix[0, 0], matrix[0, 1] * -1, matrix[2, 0], matrix[1, 0] * -1, matrix[1, 1], matrix[2, 1])
+
+
+def get_text_bounding_box(image):
+    width, height = 300, 900
+    image_np = np.asarray(image)
+    height, width, _ = image_np.shape
+    print(image_np.shape)
+    left = width
+    right = 0
+    top = height
+    bottom = 0
+    
+    for y in range(height):
+        for x in range(width):
+            # Check if the pixel is not transparent (alpha != 0)
+            if image_np[y, x, 3] != 0:
+                print(image_np[y, x, 3], x, y)
+                left = min(left, x)
+                right = max(right, x)
+                top = min(top, y)
+                bottom = max(bottom, y)
+    
+    # Add a little padding to the bounding box
+    padding = 2
+    left = max(0, left - padding)
+    right = min(width, right + padding)
+    top = max(0, top - padding)
+    bottom = min(height, bottom + padding)
+    return left, top, right, bottom
 
 
 class ImageProcessor:
@@ -201,6 +228,7 @@ class ImageProcessor:
             word_positions.append((x, y))
             x += word_width + draw.textsize(' ', font=font)[0]
         max_word_height = max([height for _, height in word_sizes])
+        print(word_sizes)
         print('max word height', max_word_height)
         print(list(zip(word_positions, text.split())))
         new_img = Image.new('RGBA', (300, 900), color=(0,0,0,0))
@@ -216,15 +244,13 @@ class ImageProcessor:
 
         # (TODO): Try a new transform to center the image
         print(affine_transform)
-        a, b, c, d, e, f = affine_transform
-        pillow_transform = (.5, c * -.5, -5, b * -.5, .5, -5)
-        print(pillow_transform)
+        # a, b, c, d, e, f = affine_transform
+        # pillow_transform = (.5, c * -.5, -5, b * -.5, .5, -5)
         matrix = create_matrix(affine_transform)
 
         # Step 3: Invert the transformation matrix, if necessary
         inv_matrix = np.linalg.inv(matrix)
         pillow_transform = convert_matrix_to_pillow(inv_matrix)
-        print(pillow_transform)
         transformed_img = new_img.transform(new_img.size, Image.AFFINE, pillow_transform)
         # transformed_img = new_img.transform(new_img.size, Image.AFFINE,(
         #     -1 * (affine_transform),
@@ -234,6 +260,26 @@ class ImageProcessor:
         #     1,  
         #     -1 * padding - (affine_transform[1] / affine_transform[3])
         # ))
+        text_x = affine_transform[4]
+        text_y = affine_transform[5]
+        text_height = max_word_height
+        text_width = word_sizes[0][0] # check word size based on word position break
+        # Assuming you have the x, y position of the text in the image, the width, height of the text layer, and the affine transformation matrix
+        # text_x, text_y, text_width, text_height, matrix
+
+        # Extract the rotation angle from the affine transformation matrix
+        rotation_angle = math.degrees(math.atan2(matrix[1, 0], matrix[0, 0]))
+
+        if abs(rotation_angle) > 0:
+            crop_box = get_text_bounding_box(transformed_img)
+            print(crop_box)
+
+        else:
+            crop_box = (text_x, text_y, text_x + layer.width, text_y + layer.height)
+        print("++++++++")
+        print(rotation_angle)
+        print(crop_box)
+        cropped_img = transformed_img.crop(crop_box)
         font_type.close()
         # Save the new image
-        return transformed_img
+        return cropped_img

@@ -27,7 +27,7 @@ par = psd_file.image_resources.get(psd_tools.constants.Resource.PIXEL_ASPECT_RAT
 print(psd_file.depth)
 print(par.name, par.data)
 layers = list(flatten_layers(psd_file))
-text_layers = [layer for layer in layers if layer.kind == 'type' and (layer.name == 'ROTATE' or layer.name == 'Space')]
+text_layers = [layer for layer in layers if layer.kind == 'type' and layer.name == 'ROTATE']
 for text_layer in text_layers:
     print(text_layer.name)
     print(get_text_data(text_layer))
