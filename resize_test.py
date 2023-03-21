@@ -21,13 +21,13 @@ def get_text_data(layer):
        "data": style_sheet,
     }
 
-psd_file = psd_tools.PSDImage.open('data/text-style-test.psd')
+psd_file = psd_tools.PSDImage.open('data/text-style-test_2.psd')
 # Get the layer information from the PSD file
 par = psd_file.image_resources.get(psd_tools.constants.Resource.PIXEL_ASPECT_RATIO)
 print(psd_file.depth)
 print(par.name, par.data)
 layers = list(flatten_layers(psd_file))
-text_layers = [layer for layer in layers if layer.kind == 'type' and layer.name == 'ROTATE']
+text_layers = [layer for layer in layers if layer.kind == 'type'][:1]
 for text_layer in text_layers:
     print(text_layer.name)
     print(get_text_data(text_layer))
@@ -35,6 +35,7 @@ for text_layer in text_layers:
     print(text_layer.engine_dict)
     text_layer.topil().show()
     time.sleep(2)
-    img = ImageProcessor.replicate_text_image(text_layer, text_layer.text.upper() , padding=5, dpi=300)
+    psd_size = psd_file.size
+    img = ImageProcessor.replicate_text_image(text_layer, text_layer.text, psd_size, padding=2, dpi=300)
     img.show()
     time.sleep(2)

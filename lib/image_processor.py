@@ -14,31 +14,19 @@ def get_text_data(layer):
     style_sheet = style_sheets[0]
     font_index = style_sheet.get('Font')
     font = font_set[font_index]
+    fill_color_values = style_sheet['FillColor']['Values']
+    fill_color_rgb = tuple(int(color * 255) for color in fill_color_values[1:])
     return {
        "name": font['Name'].value,
-       "size": style_sheet['FontSize'],
+       "size": int(style_sheet['FontSize']),
        "affineTransform": layer.transform,
        "data": style_sheet,
+       "tracking": style_sheet['Tracking'],
+       "fillColor": fill_color_rgb,
+       "allCaps": style_sheet['FontCaps'] == 2
     }
 
 
-def get_font_data(layer):
-    text_data = layer.engine_dict['ResourceDict']['Properties']
-
-    font_info = {
-        'font_family': text_data['FontSet'][0]['Name'],
-        'font_size': text_data['FontSize']['Value'],
-        'font_color': tuple(int(c) for c in text_data['FillColor']['Values']),
-        'text_tracking': text_data['Tracker']['Value'],
-    }
-
-    try:
-        font_weight = text_data['SyntheticBold']
-        font_info['font_weight'] = 'bold' if font_weight else 'normal'
-    except KeyError:
-        font_info['font_weight'] = 'normal'
-
-    return font_info
 # Step 1: Extract the affine transform values from the psd-tools object
 # Assuming you have already extracted the layer and have the transform values
 # transform_values = (a, b, c, d, e, f)
@@ -69,7 +57,6 @@ def get_text_bounding_box(image):
         for x in range(width):
             # Check if the pixel is not transparent (alpha != 0)
             if image_np[y, x, 3] != 0:
-                print(image_np[y, x, 3], x, y)
                 left = min(left, x)
                 right = max(right, x)
                 top = min(top, y)
@@ -198,6 +185,7 @@ class ImageProcessor:
     def replicate_text_image(
         layer,
         text,
+        psd_size,
         padding = 4,
         line_break=False,
         font_format='pt',
@@ -205,18 +193,16 @@ class ImageProcessor:
     ):
         # recompute font size to pixels
         # we can expect the format to be in pt (point) for now
-        font_data = get_font_data(layer)
-        print(font_data)
         text_data = get_text_data(layer)
+        if text_data['allCaps']:
+            text = text.upper()
         font_name = text_data['name'].replace('\'', '')
         font_type = open(f"data/ArialMT.ttf", 'rb')
         # use the affine transform vertical scale for now
         affine_transform = text_data['affineTransform']
-        font_size = (
-            int(text_data['size'])
-        )
+        font_size = int(text_data['size'])
+        font_fill_color = text_data['fillColor']
         # Load the image
-        print(len(layer.text.replace(' ', '')))
         letter_width = font_size / len(layer.text.replace(' ', ''))
         print('font size', font_size)
         print('letter width', letter_width)
@@ -227,7 +213,7 @@ class ImageProcessor:
         new_img_height = int(layer.size[1] * num_lines)
         print('new img height', new_img_height)
         # Create a new image with the same dimensions as the original image
-        new_img = Image.new('RGBA', (300, 900), color=(0,0,0,0))
+        new_img = Image.new('RGBA', psd_size, color=(0,0,0,0))
 
         # Draw the text onto the new image, adding line breaks as necessary
         draw = ImageDraw.Draw(new_img)
@@ -248,11 +234,11 @@ class ImageProcessor:
         print(word_sizes)
         print('max word height', max_word_height)
         print(list(zip(word_positions, text.split())))
-        new_img = Image.new('RGBA', (300, 900), color=(0,0,0,0))
+        new_img = Image.new('RGBA', psd_size, color=(0,0,0,0))
         # Draw the text onto the new image, adding line breaks as necessary
         draw = ImageDraw.Draw(new_img)
         for position, word in zip(word_positions, text.split()):
-            draw.text(position, word, font=font, fill=(255,255,255))   
+            draw.text(position, word, font=font, fill=font_fill_color)   
         # new_img = new_image.rotate(angle, expand=True)
         # dx, dy = random.randint(-10, 10), random.randint(-10, 10)
         # the sheer positions are b and d
@@ -294,9 +280,10 @@ class ImageProcessor:
         else:
             crop_box = (text_x, text_y, text_x + layer.width, text_y + layer.height)
         print("++++++++")
-        print(rotation_angle)
+        left, top, right, bottom = crop_box
         print(crop_box)
-        cropped_img = transformed_img.crop(crop_box)
+        print((left - padding, top - padding, right + padding, bottom + padding))
+        cropped_img = transformed_img.crop((left - padding, top - padding * 0.5, right + padding, bottom + padding * 2))
         font_type.close()
         # Save the new image
         return cropped_img
