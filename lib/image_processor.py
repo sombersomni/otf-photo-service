@@ -145,10 +145,13 @@ class ImageProcessor:
         print('layer size', layer.size)
         print(type(text_data['name']))
         font_name = text_data['name'].replace('\'', '')
-        font_type = open(f"data/{font_name}.otf", 'rb')
+        print(font_name)
+        font_type = open(f"data/ArialMT.ttf", 'rb')
         # use the affine transform vertical scale for now
         affineTransform = text_data['affineTransform']
-        font_size = int(text_data['size'] * affineTransform[3])
+        font_size = (
+            int(text_data['size'] * affineTransform[3])
+        )
         # Load the image
         print(len(layer.text.replace(' ', '')))
         letter_width = font_size / len(layer.text.replace(' ', ''))
@@ -156,7 +159,7 @@ class ImageProcessor:
         print('letter width', letter_width)
         max_letters_per_line = int(layer.size[0] / letter_width)
         print('max letters per line', max_letters_per_line)
-        num_lines = int(len(text) / max_letters_per_line)
+        num_lines = int(len(text) / max_letters_per_line) if max_letters_per_line > 0 else 0
         print('predicted num of lines', num_lines)
         new_img_height = int(layer.size[1] * num_lines)
         print('new img height', new_img_height)
@@ -181,7 +184,7 @@ class ImageProcessor:
         max_word_height = max([height for _, height in word_sizes])
         print('max word height', max_word_height)
         print(list(zip(word_positions, text.split())))
-        new_img = Image.new('RGBA', (layer.width + padding * 2, max_word_height + padding * 2), color=(0,0,0,0))
+        new_img = Image.new('RGBA', (layer.width + padding * 2, layer.height + padding * 2), color=(0,0,0,0))
         # Draw the text onto the new image, adding line breaks as necessary
         draw = ImageDraw.Draw(new_img)
         for position, word in zip(word_positions, text.split()):
@@ -191,15 +194,20 @@ class ImageProcessor:
         # the sheer positions are b and d
         # a and e are scale
         # c, f are for position
+
+        # (TODO): Try a new transform to center the image
         print(affineTransform)
-        transformed_img = new_img.transform(new_img.size, Image.AFFINE,(
-            1,
-            -1 * (affineTransform[2] / affineTransform[0]),
-            -1 * padding  - (affineTransform[2] / affineTransform[0]),
-            -1 * (affineTransform[1] / affineTransform[3]),
-            1,  
-            -1 * padding - (affineTransform[1] / affineTransform[3])
-        ))
+        a, b, c, d, e, f = affineTransform
+        pillow_transform = (2, c * -.5, -5, b * -.5, 2, -5)
+        transformed_img = new_img.transform(new_img.size, Image.AFFINE, pillow_transform)
+        # transformed_img = new_img.transform(new_img.size, Image.AFFINE,(
+        #     -1 * (affineTransform),
+        #     -1 * (affineTransform[2] / affineTransform[0]),
+        #     -1 * padding  - (affineTransform[2] / affineTransform[0]),
+        #     -1 * (affineTransform[1] / affineTransform[3]),
+        #     1,  
+        #     -1 * padding - (affineTransform[1] / affineTransform[3])
+        # ))
         font_type.close()
         # Save the new image
         return transformed_img
