@@ -20,6 +20,25 @@ def get_text_data(layer):
        "data": style_sheet,
     }
 
+import numpy as np
+from PIL import Image, ImageOps
+
+# Step 1: Extract the affine transform values from the psd-tools object
+# Assuming you have already extracted the layer and have the transform values
+# transform_values = (a, b, c, d, e, f)
+
+# Step 2: Convert the affine transformation values into a 3x3 transformation matrix
+def create_matrix(transform_values):
+    a, b, c, d, e, f = transform_values
+    return np.array([[a, b, 0], [c, d, 0], [e, f, 1]])
+
+
+# Step 4: Convert the 3x3 matrix into a format that Pillow can use
+def convert_matrix_to_pillow(matrix):
+    # return (matrix[0, 0], matrix[0, 1], matrix[2, 0], matrix[1, 0], matrix[1, 1], matrix[2, 1])
+    return (matrix[0, 0], matrix[0, 1] * -1, matrix[2, 0], matrix[1, 0] * -1, matrix[1, 1], matrix[2, 1])
+
+
 class ImageProcessor:
     @staticmethod
     def smart_crop(image):
@@ -150,7 +169,7 @@ class ImageProcessor:
         # use the affine transform vertical scale for now
         affine_transform = text_data['affineTransform']
         font_size = (
-            int(text_data['size'] * affine_transform[3])
+            int(text_data['size'])
         )
         # Load the image
         print(len(layer.text.replace(' ', '')))
@@ -164,7 +183,7 @@ class ImageProcessor:
         new_img_height = int(layer.size[1] * num_lines)
         print('new img height', new_img_height)
         # Create a new image with the same dimensions as the original image
-        new_img = Image.new('RGBA', (layer.width, layer.height), color=(0,0,0,0))
+        new_img = Image.new('RGBA', (300, 900), color=(0,0,0,0))
 
         # Draw the text onto the new image, adding line breaks as necessary
         draw = ImageDraw.Draw(new_img)
@@ -184,7 +203,7 @@ class ImageProcessor:
         max_word_height = max([height for _, height in word_sizes])
         print('max word height', max_word_height)
         print(list(zip(word_positions, text.split())))
-        new_img = Image.new('RGBA', (layer.width + padding * 2, layer.height + padding * 2), color=(0,0,0,0))
+        new_img = Image.new('RGBA', (300, 900), color=(0,0,0,0))
         # Draw the text onto the new image, adding line breaks as necessary
         draw = ImageDraw.Draw(new_img)
         for position, word in zip(word_positions, text.split()):
@@ -198,7 +217,13 @@ class ImageProcessor:
         # (TODO): Try a new transform to center the image
         print(affine_transform)
         a, b, c, d, e, f = affine_transform
-        pillow_transform = (2, c * -.5, -5, b * -.5, 2, -5)
+        pillow_transform = (.5, c * -.5, -5, b * -.5, .5, -5)
+        print(pillow_transform)
+        matrix = create_matrix(affine_transform)
+
+        # Step 3: Invert the transformation matrix, if necessary
+        inv_matrix = np.linalg.inv(matrix)
+        pillow_transform = convert_matrix_to_pillow(inv_matrix)
         print(pillow_transform)
         transformed_img = new_img.transform(new_img.size, Image.AFFINE, pillow_transform)
         # transformed_img = new_img.transform(new_img.size, Image.AFFINE,(
