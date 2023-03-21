@@ -21,6 +21,24 @@ def get_text_data(layer):
        "data": style_sheet,
     }
 
+
+def get_font_data(layer):
+    text_data = layer.engine_dict['ResourceDict']['Properties']
+
+    font_info = {
+        'font_family': text_data['FontSet'][0]['Name'],
+        'font_size': text_data['FontSize']['Value'],
+        'font_color': tuple(int(c) for c in text_data['FillColor']['Values']),
+        'text_tracking': text_data['Tracker']['Value'],
+    }
+
+    try:
+        font_weight = text_data['SyntheticBold']
+        font_info['font_weight'] = 'bold' if font_weight else 'normal'
+    except KeyError:
+        font_info['font_weight'] = 'normal'
+
+    return font_info
 # Step 1: Extract the affine transform values from the psd-tools object
 # Assuming you have already extracted the layer and have the transform values
 # transform_values = (a, b, c, d, e, f)
@@ -187,11 +205,10 @@ class ImageProcessor:
     ):
         # recompute font size to pixels
         # we can expect the format to be in pt (point) for now
+        font_data = get_font_data(layer)
+        print(font_data)
         text_data = get_text_data(layer)
-        print('layer size', layer.size)
-        print(type(text_data['name']))
         font_name = text_data['name'].replace('\'', '')
-        print(font_name)
         font_type = open(f"data/ArialMT.ttf", 'rb')
         # use the affine transform vertical scale for now
         affine_transform = text_data['affineTransform']
