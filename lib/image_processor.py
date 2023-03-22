@@ -188,14 +188,14 @@ class ImageProcessor:
         layer,
         text,
         psd_size,
-        padding = 4,
-        line_break=False,
+        padding = 2,
         font_format='pt',
         dpi=72
     ):
         # recompute font size to pixels
         # we can expect the format to be in pt (point) for now
         text_data = get_text_data(layer)
+        print('layer size', layer.size)
         if text_data['allCaps']:
             text = text.upper()
         font_name = text_data['name'].replace('\'', '')
@@ -206,7 +206,9 @@ class ImageProcessor:
         font_size = int(text_data['size'])
         font_fill_color = text_data['fillColor']
         font_leading = text_data['leading']
-        font_tracking = text_data['tracking']
+        print(font_size)
+        font_tracking = text_data['tracking'] * ((font_size / 72) / 20)
+        print(font_tracking)
 
         # Create a new image with the same dimensions as the original image
         new_img = Image.new('RGBA', psd_size, color=(0,0,0,0))
@@ -220,15 +222,18 @@ class ImageProcessor:
         word_sizes = []
         # (TODO:xp) build the text string with new line characters instead of building out each word
         for word in text.split():
-            word_width, word_height = draw.textlength(word, font=font)
-            print(word_width, word_height, layer.size)
+            word_width, word_height = 0, font_size
+            for i, letter in enumerate(word):
+                letter_width = draw.textlength(letter, font=font)
+                word_width += int(letter_width + (0 if i == len(word) - 1 or font_tracking <= 1 else font_tracking))
             word_sizes.append((word_width, word_height))
             # use temp padding of 10 until better calculation available
-            if x + word_width > layer.size[0] + 10:
+            print(word_width, 'ww')
+            if x + word_width > layer.size[0] + padding * 2 + 1:
                     x = 0
-                    y += word_height + font_leading * (font_size / 72)
+                    y += int(word_height + font_leading * (font_size / 72))
             word_positions.append((x, y))
-            x += word_width + draw.textlength(' ', font=font)[0]
+            x += int(word_width + draw.textlength(' ', font=font))
         max_word_height = max([height for _, height in word_sizes])
         print(word_sizes)
         print('max word height', max_word_height)
@@ -237,7 +242,11 @@ class ImageProcessor:
         # Draw the text onto the new image, adding line breaks as necessary
         draw = ImageDraw.Draw(new_img)
         for position, word in zip(word_positions, text.split()):
-            draw.text(position, word, font=font, fill=font_fill_color)   
+            x, y = position
+            for letter in word:
+                draw.text((x, y), letter, font=font, fill=font_fill_color)
+                letter_width = draw.textlength(letter, font=font)
+                x += letter_width + (0 if font_tracking > 1 else font_tracking)
 
         # the sheer positions are b and d
         # a and e are scale
@@ -253,18 +262,12 @@ class ImageProcessor:
 
         text_x = affine_transform[4]
         text_y = affine_transform[5]
-        text_height = max_word_height
-        text_width = word_sizes[0][0] # check word size based on word position break
-        # Assuming you have the x, y position of the text in the image, the width, height of the text layer, and the affine transformation matrix
-        # text_x, text_y, text_width, text_height, matrix
 
         # Extract the rotation angle from the affine transformation matrix
         rotation_angle = math.degrees(math.atan2(matrix[1, 0], matrix[0, 0]))
         # if any rotation is detected, compute the bounding box around the rotated text
         if abs(rotation_angle) > 0:
             crop_box = get_text_bounding_box(transformed_img)
-            print(crop_box)
-
         else:
             crop_box = (text_x, text_y, text_x + layer.width, text_y + layer.height)
         left, top, right, bottom = crop_box
