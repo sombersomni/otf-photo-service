@@ -10,7 +10,7 @@ par = psd_file.image_resources.get(psd_tools.constants.Resource.PIXEL_ASPECT_RAT
 print(psd_file.depth)
 print(par.name, par.data)
 layers = list(flatten_layers(psd_file))
-text_layers = [layer for layer in layers if layer.kind == 'type'][1:4]
+text_layers = [layer for layer in layers if layer.kind == 'type'][5:6]
 for text_layer in text_layers:
     print(text_layer.name)
     text_layer.topil().show()
