@@ -211,13 +211,14 @@ class ImageProcessor:
         layer,
         text,
         psd_size,
-        padding = 2,
-        font_format='pt',
-        dpi=72
+        **kwargs
     ):
         import cv2
         # recompute font size to pixels
         # we can expect the format to be in pt (point) for now
+        padding = kwargs.get("padding", 1)
+        bound_text = kwargs.get("bound_text", False)
+        psd_width, psd_height = psd_size
         text_data = get_text_data(layer)
         print('layer size', layer.size)
         if text_data['allCaps']:
@@ -278,15 +279,15 @@ class ImageProcessor:
         left, top, right, bottom = original_bbox
         text_width = right - left + 1 # add small additional padding
         transformed_img.show()
+        # Calculate text length before drawing on canvas
         new_img = Image.new('RGBA', psd_size, color=(0,0,0,0))
-        # Draw the text onto the new image, adding line breaks as necessary
         draw = ImageDraw.Draw(new_img)
         font = ImageFont.truetype(font_type, size=font_size)
-        print('text width', text_width)
         x, y = 0, 0
         word_positions = []
         word_sizes = []
-        # (TODO:xp) build the text string with new line characters instead of building out each word
+        text_boundary = text_width + padding * 2 if bound_text else abs(psd_width - e) - padding * 2
+        print(text_boundary, psd_width, e)
         for word in text.split():
             word_width, word_height = 0, font_size
             for i, letter in enumerate(word):
@@ -294,8 +295,7 @@ class ImageProcessor:
                 word_width += int(letter_width + (0 if i == len(word) - 1 or font_tracking <= 1 else font_tracking))
             word_sizes.append((word_width, word_height))
             # use temp padding of 10 until better calculation available
-            print(word_width, 'ww')
-            if x + word_width > text_width + padding * 2 + 1:
+            if x + word_width > text_boundary:
                 x = 0
                 y += int(font_leading * (font_size / 72))
                 print('font_leading', font_leading, word_height, int(font_leading * (font_size / 72)))
@@ -306,7 +306,7 @@ class ImageProcessor:
         print(word_sizes)
         print('max word height', max_word_height)
         print(list(zip(word_positions, text.split())))
- 
+        # Draw text image
         for position, word in zip(word_positions, text.split()):
             x, y = position
             for letter in word:

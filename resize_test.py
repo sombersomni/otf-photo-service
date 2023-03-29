@@ -16,6 +16,6 @@ for text_layer in text_layers:
     text_layer.topil().show()
     time.sleep(2)
     psd_size = psd_file.size
-    img = ImageProcessor.replicate_text_image(text_layer, 'Fixed This', psd_size, dpi=300)
+    img = ImageProcessor.replicate_text_image(text_layer, 'Fixed This But its getting out of hand', psd_size, dpi=300)
     img.show()
     time.sleep(2)
