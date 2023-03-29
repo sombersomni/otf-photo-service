@@ -230,9 +230,9 @@ class ImageProcessor:
         font_size = int(text_data['size'])
         font_fill_color = text_data['fillColor']
         font_leading = text_data['leading']
-        print(font_size)
+        print('font_size', font_size)
         font_tracking = text_data['tracking'] * ((font_size / 72) / 20)
-        print(font_tracking)
+        print('font_tracking', font_tracking)
         original_img = layer.topil()
         # Create a new image with the same dimensions as the original image
         new_img = Image.new('RGBA', psd_size, color=(0,0,0,0))
@@ -296,8 +296,10 @@ class ImageProcessor:
             # use temp padding of 10 until better calculation available
             print(word_width, 'ww')
             if x + word_width > text_width + padding * 2 + 1:
-                    x = 0
-                    y += int(word_height + font_leading * (font_size / 72))
+                x = 0
+                y += int(font_leading * (font_size / 72))
+                print('font_leading', font_leading, word_height, int(font_leading * (font_size / 72)))
+
             word_positions.append((x, y))
             x += int(word_width + draw.textlength(' ', font=font))
         max_word_height = max([height for _, height in word_sizes])
