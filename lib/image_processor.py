@@ -241,7 +241,6 @@ class ImageProcessor:
         a, b, c, d, e, f = affine_transform
         matrix = create_matrix(affine_transform)
         # pillow_transform = (.5, c * -.5, -5, b * -.5, .5, -5)
-        print(affine_transform)
         # Create translation matrix
         translation_matrix = np.array([[1,0,0],[0,1,0],[e,f, 1]])
         # Compute the QR decomposition of the matrix
@@ -266,93 +265,60 @@ class ImageProcessor:
             [-sin_theta, cos_theta, 0],
             [0,0,1]
         ]) 
-        print(rotation_matrix)
         transformation_matrix = rotation_matrix @ translation_matrix
         inv_matrix = np.linalg.inv(transformation_matrix)
         pillow_transform = convert_matrix_to_pillow(inv_matrix @ shear_matrix)
         # Create the sheering matrix
         transformed_img = new_img.transform(new_img.size, Image.AFFINE, pillow_transform)
         # Scan the image to find the bounding box of the text
-        # original_bbox = find_image_bounding_box(transformed_img)
+        original_bbox = find_image_bounding_box(transformed_img)
         # Draw the bounding box (optional)
         draw = ImageDraw.Draw(transformed_img)
-        # draw.rectangle(original_bbox, outline='red')
-        # Scan the image to find the bounding box of each letter
-        # Threshold the image to make it binary
-        transformed_array = np.array(transformed_img)
-        gray = transformed_array[:,:,-1]
-         # Find the connected components and their statistics
-        num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(gray, connectivity=8)
-        print(num_labels)
-        # Iterate over the connected components and compute their bounding boxes
-        for i in range(1, num_labels):
-            x, y, w, h, area = stats[i]
-            print(area)
-            if area > 100:  # Only draw bounding boxes for components with area greater than 100 pixels
-                # Draw the bounding box (optional)
-                draw.rectangle((x, y, x + w, y + h), outline='red')
+        draw.rectangle(original_bbox, outline='red')
+        left, top, right, bottom = original_bbox
+        text_width = right - left + 1 # add small additional padding
+        transformed_img.show()
+        new_img = Image.new('RGBA', psd_size, color=(0,0,0,0))
+        # Draw the text onto the new image, adding line breaks as necessary
+        draw = ImageDraw.Draw(new_img)
+        font = ImageFont.truetype(font_type, size=font_size)
+        print('text width', text_width)
+        x, y = 0, 0
+        word_positions = []
+        word_sizes = []
+        # (TODO:xp) build the text string with new line characters instead of building out each word
+        for word in text.split():
+            word_width, word_height = 0, font_size
+            for i, letter in enumerate(word):
+                letter_width = draw.textlength(letter, font=font)
+                word_width += int(letter_width + (0 if i == len(word) - 1 or font_tracking <= 1 else font_tracking))
+            word_sizes.append((word_width, word_height))
+            # use temp padding of 10 until better calculation available
+            print(word_width, 'ww')
+            if x + word_width > text_width + padding * 2 + 1:
+                    x = 0
+                    y += int(word_height + font_leading * (font_size / 72))
+            word_positions.append((x, y))
+            x += int(word_width + draw.textlength(' ', font=font))
+        max_word_height = max([height for _, height in word_sizes])
+        print(word_sizes)
+        print('max word height', max_word_height)
+        print(list(zip(word_positions, text.split())))
+ 
+        for position, word in zip(word_positions, text.split()):
+            x, y = position
+            for letter in word:
+                draw.text((x, y), letter, font=font, fill=font_fill_color)
+                letter_width = draw.textlength(letter, font=font)
+                x += letter_width + (0 if font_tracking > 1 else font_tracking)
 
-
-        return transformed_img
-        # # Draw the text onto the new image, adding line breaks as necessary
-        # draw = ImageDraw.Draw(new_img)
-        # font = ImageFont.truetype(font_type, size=font_size)
-
-        # x, y = 0, 0
-        # word_positions = []
-        # word_sizes = []
-        # # (TODO:xp) build the text string with new line characters instead of building out each word
-        # for word in text.split():
-        #     word_width, word_height = 0, font_size
-        #     for i, letter in enumerate(word):
-        #         letter_width = draw.textlength(letter, font=font)
-        #         word_width += int(letter_width + (0 if i == len(word) - 1 or font_tracking <= 1 else font_tracking))
-        #     word_sizes.append((word_width, word_height))
-        #     # use temp padding of 10 until better calculation available
-        #     print(word_width, 'ww')
-        #     if x + word_width > layer.size[0] + padding * 2 + 1:
-        #             x = 0
-        #             y += int(word_height + font_leading * (font_size / 72))
-        #     word_positions.append((x, y))
-        #     x += int(word_width + draw.textlength(' ', font=font))
-        # max_word_height = max([height for _, height in word_sizes])
-        # print(word_sizes)
-        # print('max word height', max_word_height)
-        # print(list(zip(word_positions, text.split())))
-        # new_img = Image.new('RGBA', psd_size, color=(0,0,0,0))
-        # # Draw the text onto the new image, adding line breaks as necessary
-        # draw = ImageDraw.Draw(new_img)
-        # for position, word in zip(word_positions, text.split()):
-        #     x, y = position
-        #     for letter in word:
-        #         draw.text((x, y), letter, font=font, fill=font_fill_color)
-        #         letter_width = draw.textlength(letter, font=font)
-        #         x += letter_width + (0 if font_tracking > 1 else font_tracking)
-
-        # # the sheer positions are b and d
-        # # a and e are scale
-        # # c, f are for position
-
-        # # a, b, c, d, e, f = affine_transform
-        # # pillow_transform = (.5, c * -.5, -5, b * -.5, .5, -5)
-        # matrix = create_matrix(affine_transform)
-        # # Invert the transformation matrix, if necessary
-        # inv_matrix = np.linalg.inv(matrix)
-        # pillow_transform = convert_matrix_to_pillow(inv_matrix)
-        # transformed_img = new_img.transform(new_img.size, Image.AFFINE, pillow_transform)
-
-        # text_x = affine_transform[4]
-        # text_y = affine_transform[5]
-
-        # # Extract the rotation angle from the affine transformation matrix
-        # rotation_angle = math.degrees(math.atan2(matrix[1, 0], matrix[0, 0]))
-        # # if any rotation is detected, compute the bounding box around the rotated text
-        # if abs(rotation_angle) > 0:
-        #     crop_box = get_text_bounding_box(transformed_img)
-        # else:
-        #     crop_box = (text_x, text_y, text_x + layer.width, text_y + layer.height)
-        # left, top, right, bottom = crop_box
-        # cropped_img = transformed_img.crop((left - padding, top - padding * 0.5, right + padding, bottom + padding * 2))
-        # font_type.close()
-        # # Save the new image
-        # return cropped_img
+        # Invert the transformation matrix, if necessary
+        inv_matrix = np.linalg.inv(matrix)
+        pillow_transform = convert_matrix_to_pillow(inv_matrix)
+        transformed_img = new_img.transform(new_img.size, Image.AFFINE, pillow_transform)
+        transformed_img.show()
+        left, top, right, bottom = find_image_bounding_box(transformed_img)
+        cropped_img = transformed_img.crop((left - padding, top - padding * 0.5, right + padding, bottom + padding * 2))
+        font_type.close()
+        # Save the new image
+        return cropped_img
