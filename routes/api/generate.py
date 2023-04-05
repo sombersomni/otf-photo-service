@@ -10,7 +10,12 @@ from PIL import Image, ImageFont, ImageDraw
 from flask import g, jsonify, request
 from constants import Key_Title_Zip, Title_Font_Zip
 from itertools import chain
-from helpers.psd_layers import bulk_layer_composites, bulk_resize_images, flatten_layers
+from helpers.psd_layers import (
+    bulk_layer_composites,
+    bulk_replicate_text,
+    bulk_resize_images,
+    flatten_layers
+)
 from helpers.buckets import (
     create_presigned_post_for_psd_layer,
     get_images_from_s3_keys,
@@ -91,7 +96,6 @@ async def generate_controller(s3, http_session):
             if layer.kind == 'type'
             and event_map[layer.name].get('type') == 'text'
         ]
-        text_replacement_layer_map = {layer.name: layer for layer in text_layers_to_replace}
         # Get all the bucket keys related to image layers
         bucket_key_title_zipped = (
             Key_Title_Zip(
@@ -114,10 +118,12 @@ async def generate_controller(s3, http_session):
         # grabs font from common assets in bucket
         fonts = (Title_Font_Zip(font, f"common/assets/fonts/{font}.otf") for font in event_map.get('Fonts', []))
         font_type_map = await get_fonts_from_s3_keys(s3, bucket_name, fonts)
-        text_to_process = 
+        text_value_map = {key: value['eventKey'] for key, value in event_map.items() if value.get('type') == 'text'}
+        text_to_process = bulk_replicate_text(text_layers_to_replace, psd_file.size, font_type_map, text_value_map)
         # chain images and fonts together for processing
         images_to_process = resized_images  
         print(list(images_to_process))
+        print(list(text_to_process))
         # layer_images = bulk_layer_composites(layers, images_to_process, psd_file.size)
 
         # merged_image = Image.new(mode='RGBA', size=psd_file.size, color=(0, 0, 0, 0))
