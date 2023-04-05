@@ -72,7 +72,6 @@ def get_text_bounding_box(image):
     width, height = 300, 900
     image_np = np.asarray(image)
     height, width, _ = image_np.shape
-    print(image_np.shape)
     left = width
     right = 0
     top = height
@@ -214,7 +213,6 @@ class ImageProcessor:
         font_type_map,
         **kwargs
     ):
-        import cv2
         # recompute font size to pixels
         # we can expect the format to be in pt (point) for now
         padding = kwargs.get("padding", 1)

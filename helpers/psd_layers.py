@@ -46,9 +46,8 @@ def bulk_layer_composites(
     replacement_images,
     filesize
 ):
-    visible_layers = (layer for layer in layers if layer.is_visible())
     replace_image_map = {title: image for title, image in replacement_images}
-    for layer in visible_layers:
+    for layer in layers:
         print(layer.name, layer.kind)
         layer_image = Image.new(mode='RGBA', size=filesize, color=(0, 0, 0, 0))
         layer_data = layer.composite()

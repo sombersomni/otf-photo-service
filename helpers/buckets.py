@@ -5,7 +5,12 @@ from io import BytesIO
 from typing import Iterable
 from PIL import Image, ImageFont
 
-from constants import Key_Title_Zip, Title_Image_Zip, Key_Font_Zip
+from constants import (
+    Key_Title_Zip,
+    Title_Image_Zip,
+    Title_Font_Zip,
+    Key_Font_Zip
+)
 from botocore.exceptions import ClientError
 
 async def to_thread(func, /, *args, **kwargs):
@@ -26,10 +31,10 @@ async def get_image(client,  bucket_name: str, key_title_zip: Key_Title_Zip):
 async def get_font(client,  bucket_name: str, key_font_zip: Key_Font_Zip):
     key, font = key_font_zip
     # Only supports ttf or otf font types
-    if font.endswith('.ttf') or font.endswith('.otf'):
+    if  key.endswith('.ttf') or key.endswith('.otf'):
         response = await to_thread(client.get_object, Bucket=bucket_name, Key=key)
         font_bytes = BytesIO(response['Body'].read())
-        return { font: font_bytes }
+        return Title_Font_Zip(font, font_bytes)
 
 async def get_images_from_s3_keys(client, bucket_name: str, key_title_zipped: Iterable[Key_Title_Zip]):
     return await asyncio.gather(

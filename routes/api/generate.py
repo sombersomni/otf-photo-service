@@ -8,7 +8,7 @@ import boto3
 import psd_tools
 from PIL import Image, ImageFont, ImageDraw
 from flask import g, jsonify, request
-from constants import Key_Title_Zip, Title_Font_Zip
+from constants import Key_Title_Zip, Key_Font_Zip
 from itertools import chain
 from helpers.psd_layers import (
     bulk_layer_composites,
@@ -74,13 +74,15 @@ async def generate_controller(s3, http_session):
             return jsonify(error="Request body is invalid"), 400
 
         # Download the PSD file from S3
+        print('Retrieving PSD')
         psd_object = await to_thread(s3.get_object, Bucket=bucket_name, Key=key)
         data = psd_object['Body'].read()
         # Parse the PSD file with psd_tools
-
+        print('Open PSD')
         psd_file = psd_tools.PSDImage.open(BytesIO(data))
         # Get the layer information from the PSD file
         layers = list(flatten_layers(psd_file))
+        print('Create layers for later image reconstruction')
         layers_to_replace = [
             layer for layer in layers
             if layer.name in event_map
@@ -88,14 +90,15 @@ async def generate_controller(s3, http_session):
         ]
         image_layers_to_replace = [
             layer for layer in layers_to_replace
-            if event_map[layer.name].get('type') == 'image'
+            if event_map.get(layer.name, {}).get('type') == 'image'
         ]
         image_replacement_layer_map = {layer.name: layer for layer in image_layers_to_replace}
         text_layers_to_replace = [
             layer for layer in layers_to_replace
             if layer.kind == 'type'
-            and event_map[layer.name].get('type') == 'text'
+            and event_map.get(layer.name, {}).get('type') == 'text'
         ]
+        print('Bucket Key combination')
         # Get all the bucket keys related to image layers
         bucket_key_title_zipped = (
             Key_Title_Zip(
@@ -111,14 +114,25 @@ async def generate_controller(s3, http_session):
                 if event_map.get(layer.name, {}).get('value') is not None
             )
         )
+        print('Retrieve s3 images')
         replacement_images = await get_images_from_s3_keys(s3, bucket_name, bucket_key_title_zipped)
+        print('Crop and resize images')
         resized_images = bulk_resize_images(replacement_images, image_replacement_layer_map)
 
         # get fonts and set text images
         # grabs font from common assets in bucket
-        fonts = (Title_Font_Zip(font, f"common/assets/fonts/{font}.otf") for font in event_map.get('Fonts', []))
-        font_type_map = await get_fonts_from_s3_keys(s3, bucket_name, fonts)
-        text_value_map = {key: value['eventKey'] for key, value in event_map.items() if value.get('type') == 'text'}
+        print('Key Font Zip construction')
+        fonts = (Key_Font_Zip(f"common/assets/fonts/{font}.otf", font) for font in event_map.get('Fonts', []))
+        print('Retrieve s3 fonts')
+        font_types_zipped = await get_fonts_from_s3_keys(s3, bucket_name, fonts)
+        font_type_map = {title: font for title, font in font_types_zipped}
+        text_value_map = {
+            key: body.get(value['eventKey']) for key, value in event_map.items()
+            if key != 'Fonts' and value.get('type') == 'text'
+        }
+        print(font_type_map)
+        print(text_value_map)
+        print('Replicate text as images')
         text_to_process = bulk_replicate_text(text_layers_to_replace, psd_file.size, font_type_map, text_value_map)
         # chain images and fonts together for processing
         images_to_process = resized_images  
