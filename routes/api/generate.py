@@ -127,11 +127,11 @@ async def generate_controller(s3, http_session):
         font_types_zipped = await get_fonts_from_s3_keys(s3, bucket_name, fonts)
         font_type_map = {title: font for title, font in font_types_zipped}
         text_value_map = {
-            key: body.get(value['eventKey']) for key, value in event_map.items()
-            if key != 'Fonts' and value.get('type') == 'text'
+            key: str(body[value['eventKey']]) for key, value in event_map.items()
+            if key != 'Fonts'
+            and value.get('type') == 'text'
+            and body.get(value['eventKey']) is not None
         }
-        print(font_type_map)
-        print(text_value_map)
         print('Replicate text as images')
         text_to_process = bulk_replicate_text(text_layers_to_replace, psd_file.size, font_type_map, text_value_map)
         # chain images and fonts together for processing

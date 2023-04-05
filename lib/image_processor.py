@@ -232,6 +232,11 @@ class ImageProcessor:
         print('font_size', font_size)
         font_tracking = text_data['tracking'] * ((font_size / 72) / 20)
         print('font_tracking', font_tracking)
+        font_type = font_type_map.get(font_name)
+        if font_type is None:
+            print("No font type was found")
+            return
+        font = ImageFont.truetype(font_type, size=font_size)
         original_img = layer.topil()
         # Create a new image with the same dimensions as the original image
         new_img = Image.new('RGBA', psd_size, color=(0,0,0,0))
@@ -279,11 +284,6 @@ class ImageProcessor:
         # Calculate text length before drawing on canvas
         new_img = Image.new('RGBA', psd_size, color=(0,0,0,0))
         draw = ImageDraw.Draw(new_img)
-        font_type = font_type_map.get(font_name)
-        if font_type is None:
-            print("No font type was found")
-            return
-        font = ImageFont.truetype(font_type, size=font_size)
         x, y = 0, 0
         word_positions = []
         word_sizes = []
@@ -321,6 +321,5 @@ class ImageProcessor:
         transformed_img = new_img.transform(new_img.size, Image.AFFINE, pillow_transform)
         left, top, right, bottom = find_image_bounding_box(transformed_img)
         cropped_img = transformed_img.crop((left - padding, top - padding * 0.5, right + padding, bottom + padding * 2))
-        font_type.close()
         # Save the new image
         return cropped_img
