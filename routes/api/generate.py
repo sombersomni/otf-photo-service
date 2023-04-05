@@ -76,11 +76,12 @@ async def generate_controller(s3, http_session):
                 )
             )
         )
-
+        print(bucket_key_title_zipped)
         replacement_images = await get_images_from_s3_keys(s3, bucket_name, bucket_key_title_zipped)
         resized_images = bulk_resize_images(replacement_images, replacement_layer_map)
 
-        # images_to_process = resized_images  
+        images_to_process = resized_images  
+        print(images_to_process)
         # layer_images = bulk_layer_composites(layers, images_to_process, psd_file.size)
 
         # merged_image = Image.new(mode='RGBA', size=psd_file.size, color=(0, 0, 0, 0))
