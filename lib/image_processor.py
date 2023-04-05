@@ -211,6 +211,7 @@ class ImageProcessor:
         layer,
         text,
         psd_size,
+        font_type_map,
         **kwargs
     ):
         import cv2
@@ -225,7 +226,6 @@ class ImageProcessor:
             text = text.upper()
         font_name = text_data['name'].replace('\'', '')
         print(font_name)
-        font_type = open(f"data/{font_name}.ttf", 'rb')
         # use the affine transform vertical scale for now
         affine_transform = text_data['affineTransform']
         font_size = int(text_data['size'])
@@ -281,6 +281,10 @@ class ImageProcessor:
         # Calculate text length before drawing on canvas
         new_img = Image.new('RGBA', psd_size, color=(0,0,0,0))
         draw = ImageDraw.Draw(new_img)
+        font_type = font_type_map.get(font_name)
+        if font_type is None:
+            print("No font type was found")
+            return
         font = ImageFont.truetype(font_type, size=font_size)
         x, y = 0, 0
         word_positions = []

@@ -35,6 +35,12 @@ def bulk_resize_images(
         print(title, resized_image.width, resized_image.height)
         yield Title_Image_Zip(title, resized_image)
 
+def bulk_replicate_text(text_layers, psd_size, font_type_map, text_value_map):
+    for layer in text_layers:
+        text = text_value_map.get(layer.name)
+        replicated_image = ImageProcessor.replicate_text_image(layer, text, psd_size, font_type_map)
+        yield Title_Image_Zip(layer.name, replicated_image)
+
 def bulk_layer_composites(
     layers,
     replacement_images,
