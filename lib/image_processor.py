@@ -278,7 +278,6 @@ class ImageProcessor:
         draw.rectangle(original_bbox, outline='red')
         left, top, right, bottom = original_bbox
         text_width = right - left + 1 # add small additional padding
-        transformed_img.show()
         # Calculate text length before drawing on canvas
         new_img = Image.new('RGBA', psd_size, color=(0,0,0,0))
         draw = ImageDraw.Draw(new_img)
@@ -318,7 +317,6 @@ class ImageProcessor:
         inv_matrix = np.linalg.inv(matrix)
         pillow_transform = convert_matrix_to_pillow(inv_matrix)
         transformed_img = new_img.transform(new_img.size, Image.AFFINE, pillow_transform)
-        transformed_img.show()
         left, top, right, bottom = find_image_bounding_box(transformed_img)
         cropped_img = transformed_img.crop((left - padding, top - padding * 0.5, right + padding, bottom + padding * 2))
         font_type.close()
