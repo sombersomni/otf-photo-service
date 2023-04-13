@@ -64,8 +64,12 @@ def create_matrix(transform_values):
 
 # Step 4: Convert the 3x3 matrix into a format that Pillow can use
 def convert_matrix_to_pillow(matrix):
-    # return (matrix[0, 0], matrix[0, 1], matrix[2, 0], matrix[1, 0], matrix[1, 1], matrix[2, 1])
-    return (matrix[0, 0], matrix[0, 1] * -1, matrix[2, 0], matrix[1, 0] * -1, matrix[1, 1], matrix[2, 1])
+   # Extract first two rows
+    affine_matrix = matrix[:2, :]
+    # Divide by bottom-right element
+    affine_matrix *= matrix[2, 2] ** -1
+    # Flatten into 6-tuple
+    return tuple(affine_matrix.flatten())
 
 
 def get_text_bounding_box(image):
@@ -93,26 +97,6 @@ def get_text_bounding_box(image):
     top = max(0, top - padding)
     bottom = min(height, bottom + padding)
     return left, top, right, bottom
-
-
-import io
-
-def copy_bytesio(bytesio_obj):
-    # Create a new BytesIO object
-    copy_obj = io.BytesIO()
-
-    # Set the position of the original BytesIO object to the beginning
-    bytesio_obj.seek(0)
-
-    # Copy the content from the original BytesIO object to the new one
-    copy_obj.write(bytesio_obj.read())
-
-    # Reset the position of both the original and the copied BytesIO objects to the beginning
-    bytesio_obj.seek(0)
-    copy_obj.seek(0)
-
-    # Return the copied BytesIO object
-    return copy_obj
 
 
 class ImageProcessor:
@@ -235,10 +219,11 @@ class ImageProcessor:
     ):
         # recompute font size to pixels
         # we can expect the format to be in pt (point) for now
-        print(layer.name, psd_size)
+        print(layer.name, psd_size, layer.bbox)
         padding = kwargs.get("padding", 1)
         bound_text = kwargs.get("bound_text", False)
         psd_width, psd_height = psd_size
+        layer_width, layer_height = layer.size
         text_data = get_text_data(layer)
         print('layer size', layer.size)
         if text_data['allCaps']:
@@ -246,7 +231,11 @@ class ImageProcessor:
         font_name = text_data['name'].replace('\'', '')
         # use the affine transform vertical scale for now
         affine_transform = text_data['affineTransform']
-        font_size = int(text_data['size'])
+        print(affine_transform)
+        # Realign original text image horizontally
+        a, b, c, d, e, f = affine_transform
+        avg_scale = ((a + c) * 0.5)
+        font_size = int(int(text_data['size']) * avg_scale * 300 * 72 ** -1)
         font_fill_color = text_data['fillColor']
         font_leading = text_data['leading']
         print('font_size', font_size)
@@ -256,49 +245,51 @@ class ImageProcessor:
         if font_type is None:
             print("No font type was found")
             return
+        
         font = ImageFont.truetype(font_type, size=font_size)
         original_img = layer.topil()
         # Create a new image with the same dimensions as the original image
         new_img = Image.new('RGBA', psd_size, color=(0,0,0,0))
         new_img.paste(original_img)
-        new_img.save(f"new_img-{layer.name}.png", format='PNG')
         # Realign original text image horizontally
         a, b, c, d, e, f = affine_transform
-        print(affine_transform)
         matrix = create_matrix(affine_transform)
+        # override matrix translation using bbox
         # pillow_transform = (.5, c * -.5, -5, b * -.5, .5, -5)
         # Create translation matrix
-        translation_matrix = np.array([[1,0,0],[0,1,0],[e,f, 1]])
+        translation_matrix = np.array([
+            [1,0,0],
+            [0,1,0],
+            [psd_width * 0.5 - layer_width * 0.5, psd_height * 0.5 - layer_width * 0.5, 1]])
         # Compute the QR decomposition of the matrix
         Q, R = np.linalg.qr(matrix[:2, :2])
 
         # Extract the upper triangular matrix
         shear_matrix = (R * (np.diag(R) ** -1))
         # Negate the sheering
-        # shear_matrix = np.array([
-        #     [shear_matrix[0,0], shear_matrix[0,1] * -1, 0],
-        #     [shear_matrix[1,0] * -1, shear_matrix[1,1], 0],
-        #     [0,0,1]
-        # ])
-        shear_matrix = np.eye(3)
+        shear_matrix = np.array([
+            [shear_matrix[0,0], shear_matrix[0,1] * -1, 0],
+            [shear_matrix[1,0] * -1, shear_matrix[1,1], 0],
+            [0,0,1]
+        ])
         # # Extract the rotation angle from the affine transformation matrix
         rotation_angle = math.degrees(math.atan2(c, a))
         # Create the rotation matrix
         theta = math.radians(rotation_angle)
         cos_theta = math.cos(theta)
         sin_theta = math.sin(theta)
-        # rotation_matrix = np.array([
-        #     [cos_theta, sin_theta, 0],
-        #     [-sin_theta, cos_theta, 0],
-        #     [0,0,1]
-        # ]) 
-        rotation_matrix = np.eye(3)
-        transformation_matrix = rotation_matrix @ translation_matrix
-        inv_matrix = np.linalg.inv(transformation_matrix)
-        pillow_transform = convert_matrix_to_pillow(inv_matrix @ shear_matrix)
+        rotation_matrix = np.array([
+            [cos_theta, sin_theta, 0],
+            [-sin_theta, cos_theta, 0],
+            [0,0,1]
+        ]) 
+
+        transformation_matrix = np.eye(3) @ rotation_matrix @ translation_matrix @ shear_matrix
+        print(transformation_matrix, np.linalg.inv(transformation_matrix))
+        pillow_transform = convert_matrix_to_pillow(np.linalg.inv(transformation_matrix))
         # Create the sheering matrix
         transformed_img = new_img.transform(new_img.size, Image.AFFINE, pillow_transform)
-        transformed_img.save(f"data/transformed-{layer.name}.png", format="PNG")
+        transformed_img.save(f"data/transformed-before-{layer.name}.png", format="PNG")
         # Scan the image to find the bounding box of the text
         original_bbox = find_image_bounding_box(transformed_img)
         # # Draw the bounding box (optional)
@@ -341,7 +332,10 @@ class ImageProcessor:
         # Invert the transformation matrix, if necessary
         inv_matrix = np.linalg.inv(matrix)
         pillow_transform = convert_matrix_to_pillow(inv_matrix)
-        transformed_img = new_img.transform(new_img.size, Image.AFFINE, pillow_transform)
+        print('pil transform', pillow_transform)
+        a, b, c, d, e, f = pillow_transform
+        new_img.save(f'data/before-transform-{layer.name}.png', format='PNG') 
+        transformed_img = new_img.transform(new_img.size, Image.AFFINE, (1, b, c, d, 1, f))
         transformed_img.save(f'data/transformed-{layer.name}.png', format='PNG')
         left, top, right, bottom = find_image_bounding_box(transformed_img)
         cropped_img = transformed_img.crop((left - padding, top - padding * 0.5, right + padding, bottom + padding * 2))

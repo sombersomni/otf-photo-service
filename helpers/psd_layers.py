@@ -48,11 +48,13 @@ def bulk_layer_composites(
 ):
     replace_image_map = {title: image for title, image in replacement_images}
     for layer in layers:
+        print('Replicate text')
         print(layer.name, layer.kind)
+        print(layer.bbox)
+        print('---------------')
         layer_image = Image.new(mode='RGBA', size=filesize, color=(0, 0, 0, 0))
         layer_data = layer.composite()
         replacement_image = replace_image_map.get(layer.name)
-        print(layer.bbox)
         layer_image.paste(
             replacement_image if replacement_image else layer_data,
             box=layer.bbox[:2],
