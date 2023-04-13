@@ -133,11 +133,12 @@ async def generate_controller(s3, http_session):
             and body.get(value['eventKey']) is not None
         }
         print('Replicate text as images')
-        text_to_process = bulk_replicate_text(text_layers_to_replace, psd_file.size, font_type_map, text_value_map)
+        replicated_text_images = bulk_replicate_text(text_layers_to_replace, psd_file.size, font_type_map, text_value_map)
+        for title, image in replicated_text_images:
+            image.save(f"data/{title}.png", format='PNG')
         # chain images and fonts together for processing
-        images_to_process = resized_images  
-        print(list(images_to_process))
-        print(list(text_to_process))
+        # images_to_process = chain(resized_images, replicated_text_images)
+
         # layer_images = bulk_layer_composites(layers, images_to_process, psd_file.size)
 
         # merged_image = Image.new(mode='RGBA', size=psd_file.size, color=(0, 0, 0, 0))

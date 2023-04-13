@@ -52,6 +52,7 @@ def bulk_layer_composites(
         layer_image = Image.new(mode='RGBA', size=filesize, color=(0, 0, 0, 0))
         layer_data = layer.composite()
         replacement_image = replace_image_map.get(layer.name)
+        print(layer.bbox)
         layer_image.paste(
             replacement_image if replacement_image else layer_data,
             box=layer.bbox[:2],
